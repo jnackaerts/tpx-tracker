@@ -437,6 +437,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="hbtn tpx-only" onclick="openUserMgmt()">Gebruikers</button>
       <button class="hbtn tpx-only" onclick="openWIEditor()">⊞ Work items</button>
       <button class="hbtn pdf tpx-only" onclick="openPDFExport()">⬇ PDF</button>
+      <button class="hbtn tpx-only" onclick="openXLSXExport()" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6EE7B7">⬇ XLSX</button>
+      <button class="hbtn tpx-only" onclick="openXLSXImport()" style="background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:#FCD34D">⬆ Import</button>
       <button class="hbtn primary" onclick="exportCSV()">Export CSV</button>
       <button class="hbtn" onclick="doLogout()">Uitloggen</button>
     </div>
@@ -626,6 +628,67 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-actions">
       <button class="mabtn" onclick="closeUserMgmt()">Annuleren</button>
       <button class="mabtn save" onclick="saveUsers()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- XLSX IMPORT MODAL -->
+<div class="modal-bg" id="xlsxImportModal">
+  <div class="modal" style="width:640px">
+    <h2>⬆ XLSX / CSV importeren</h2>
+    <p style="font-size:12px;color:#6b7fa3;margin-bottom:16px">
+      Upload een XLSX of CSV die je eerder exporteerde. Bestaande work items worden bijgewerkt, nieuwe items worden toegevoegd.
+      <strong>Kolommen vereist:</strong> ID, Feature, Domein, Categorie, MoSCoW, Scope, Grootte, Est (u), Acceptatiecriteria, Sign-off verantw.
+    </p>
+    <div id="xlsxDropZone" style="border:2px dashed #d0dce8;border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px"
+         onclick="document.getElementById('xlsxFileInput').click()"
+         ondragover="event.preventDefault();this.style.borderColor='#1E6FD9';this.style.background='#EFF6FF'"
+         ondragleave="this.style.borderColor='#d0dce8';this.style.background=''"
+         ondrop="handleXLSXDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px">📂</div>
+      <div style="font-size:13px;font-weight:600;color:#0D1F3C">Klik om bestand te kiezen of sleep hier naartoe</div>
+      <div style="font-size:11px;color:#6b7fa3;margin-top:4px">.xlsx of .csv — max 5MB</div>
+    </div>
+    <input type="file" id="xlsxFileInput" accept=".xlsx,.csv" style="display:none" onchange="handleXLSXFile(this.files[0])">
+    <div id="xlsxPreview" style="display:none">
+      <div style="font-size:12px;font-weight:600;color:#0D1F3C;margin-bottom:8px" id="xlsxPreviewTitle"></div>
+      <div style="max-height:240px;overflow-y:auto;border:1px solid #e0e8f5;border-radius:6px">
+        <table style="width:100%;border-collapse:collapse;font-size:11px" id="xlsxPreviewTable"></table>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#6b7fa3" id="xlsxPreviewStats"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="mabtn" onclick="closeXLSXImport()">Annuleren</button>
+      <button class="mabtn save" id="xlsxImportBtn" onclick="executeXLSXImport()" style="display:none">⬆ Importeren</button>
+    </div>
+  </div>
+</div>
+
+<!-- XLSX EXPORT MODAL -->
+<div class="modal-bg" id="xlsxExportModal">
+  <div class="modal" style="width:480px">
+    <h2>⬇ XLSX exporteren</h2>
+    <p style="font-size:12px;color:#6b7fa3;margin-bottom:16px">Kies wat je wil exporteren naar Excel</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      <label class="pdf-opt selected" onclick="selectXLSXOpt(this,'workitems')">
+        <input type="radio" name="xlsxType" value="workitems" checked>
+        <div><div class="pdf-opt-title">Work items (project template)</div>
+        <div class="pdf-opt-desc">Alle 219 items met sizing, status, assignees, AC — bruikbaar als template voor nieuw project</div></div>
+      </label>
+      <label class="pdf-opt" onclick="selectXLSXOpt(this,'budget')">
+        <input type="radio" name="xlsxType" value="budget">
+        <div><div class="pdf-opt-title">Budget overzicht</div>
+        <div class="pdf-opt-desc">Per item: size, uren, kostprijs, sign-off status</div></div>
+      </label>
+      <label class="pdf-opt" onclick="selectXLSXOpt(this,'timesheets')">
+        <input type="radio" name="xlsxType" value="timesheets">
+        <div><div class="pdf-opt-title">Timesheets</div>
+        <div class="pdf-opt-desc">Alle geboekte uren per consultant en work item</div></div>
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="mabtn" onclick="closeXLSXExport()">Annuleren</button>
+      <button class="mabtn save" onclick="executeXLSXExport()">⬇ Exporteren</button>
     </div>
   </div>
 </div>
@@ -1349,6 +1412,19 @@ function renderBudgetItem(it){
             <option value="">—</option>
             ${team.client.map(m=>`<option value="${m}" ${p.signoffResponsible===m?'selected':''}>${m}</option>`).join('')}
           </select>
+        </div>
+        <div style="border-top:1px solid #BFDBFE;margin-top:8px;padding-top:8px">
+          <div style="font-size:10px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Sign-off</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button class="so-sign-btn${signoffs[it.id]?.status==='signed'?' signed':''}" onclick="doBudgetSignoff(${it.id},'signed')">✓ Aanvaard</button>
+            <button class="so-sign-btn${signoffs[it.id]?.status==='rejected'?' rejected':''}" onclick="doBudgetSignoff(${it.id},'rejected')">✗ Afkeur</button>
+            ${signoffs[it.id]?.status!=='pending'?`<button class="so-sign-btn" onclick="doBudgetSignoff(${it.id},'pending')" style="font-size:10px">↩ Reset</button>`:''}
+            ${signoffs[it.id]?.status==='signed'?`<span style="font-size:11px;color:#065F46">door ${escHtml(signoffs[it.id].signedBy)} op ${fmtDateNL(signoffs[it.id].signedAt)}</span>`:''}
+            ${signoffs[it.id]?.status==='rejected'?`<span style="font-size:11px;color:#991B1B">door ${escHtml(signoffs[it.id].signedBy||'')} op ${fmtDateNL(signoffs[it.id].signedAt||'')}</span>`:''}
+          </div>
+          <div style="margin-top:6px">
+            <input style="font-size:11px;padding:3px 6px;border:1px solid #BFDBFE;border-radius:4px;width:100%" placeholder="Opmerking bij sign-off..." value="${escHtml(signoffs[it.id]?.remark||'')}" onchange="setSignoffRemark(${it.id},this.value)">
+          </div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px">
           <button class="bi-save-btn" onclick="saveBIEdit(${it.id},this)">Opslaan</button>
@@ -2105,6 +2181,12 @@ function renderSignoff(){
   document.getElementById('soContent').innerHTML=html;
 }
 
+// Sign-off vanuit budget tab (klant kan ook)
+function doBudgetSignoff(itemId,status){
+  doSignoff(itemId,status);
+  reRenderItem(itemId); // re-render budget row to update badges
+}
+
 function doSignoff(itemId,status){
   if(!signoffs[itemId]) signoffs[itemId]={status:'pending',signedBy:'',signedAt:'',remark:''};
   const so=signoffs[itemId];
@@ -2442,6 +2524,293 @@ function renderWIEditor(scrollDomain){
 }
 
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── XLSX EXPORT / IMPORT ──────────────────────────────────────────────────────
+let _xlsxExportType='workitems';
+let _xlsxImportData=null; // parsed rows ready to import
+
+function openXLSXExport(){
+  _xlsxExportType='workitems';
+  document.querySelectorAll('#xlsxExportModal .pdf-opt').forEach(e=>e.classList.remove('selected'));
+  const first=document.querySelector('#xlsxExportModal .pdf-opt input[value=workitems]');
+  if(first) first.closest('.pdf-opt').classList.add('selected');
+  document.getElementById('xlsxExportModal').classList.add('open');
+}
+function closeXLSXExport(){ document.getElementById('xlsxExportModal').classList.remove('open'); }
+function selectXLSXOpt(el,type){
+  _xlsxExportType=type;
+  document.querySelectorAll('#xlsxExportModal .pdf-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function openXLSXImport(){
+  _xlsxImportData=null;
+  document.getElementById('xlsxPreview').style.display='none';
+  document.getElementById('xlsxImportBtn').style.display='none';
+  document.getElementById('xlsxFileInput').value='';
+  document.getElementById('xlsxImportModal').classList.add('open');
+}
+function closeXLSXImport(){ document.getElementById('xlsxImportModal').classList.remove('open'); }
+
+function executeXLSXExport(){
+  closeXLSXExport();
+  const rows=buildXLSXRows(_xlsxExportType);
+  downloadCSVasXLSX(rows, `${config.projectName.replace(/\s+/g,'_')}_${_xlsxExportType}.csv`);
+}
+
+function buildXLSXRows(type){
+  if(type==='timesheets'){
+    const header=['Datum','Consultant','Domein','Work item ID','Work item','Uren','Omschrijving'];
+    const rows=[header];
+    [...timeEntries].sort((a,b)=>a.entry_date.localeCompare(b.entry_date)).forEach(e=>{
+      const it=RAW.find(r=>r.id===e.work_item_id);
+      rows.push([e.entry_date,e.person,it?.domain||'',e.work_item_id,it?.feature||'',parseFloat(e.hours).toFixed(2),e.description||'']);
+    });
+    return rows;
+  }
+  if(type==='budget'){
+    const header=['ID','Domein','Feature','Categorie','MoSCoW','Scope','Grootte','Min u','Midden u','Max u','Est u','Actuals u','Min €','Midden €','Max €','Sign-off verantw.','Sign-off status','Sign-off door','Sign-off datum'];
+    const rows=[header];
+    RAW.forEach(it=>{
+      const p=getPM(it.id);
+      const so=signoffs[it.id]||{};
+      const s=p.size&&p.size!=='skip'?p.size:'';
+      const rng=s?getSizeRange(s):[0,0];
+      const mid=s?getSizeMid(s):0;
+      const r=getItemRate(it.id);
+      rows.push([it.id,it.domain,it.feature,it.cat,it.moscow,it.scope,s,rng[0],Math.round(mid),rng[1],p.estimatedHours??'',p.actualHours??'',s?Math.round(rng[0]*r):'',s?Math.round(mid*r):'',s?Math.round(rng[1]*r):'',p.signoffResponsible||'',so.status||'pending',so.signedBy||'',so.signedAt||'']);
+    });
+    return rows;
+  }
+  // workitems (default) — full project template
+  const header=['ID','Work item groep','Domein','Feature','Beschrijving','Categorie','MoSCoW','Scope','Grootte','Est (u)','Actuals (u)','Status','TPX Assignee','Klant Assignee','Acceptatiecriteria','Sign-off verantw.','Aangemaakt','Opgelost','Intern status','Interne notities'];
+  const rows=[header];
+  RAW.forEach(it=>{
+    const p=getPM(it.id);
+    rows.push([it.id,it.wi||'',it.domain,it.feature,it.desc||'',it.cat||'',it.moscow||'',it.scope||'',p.size||'',p.estimatedHours??'',p.actualHours??'',p.status||'todo',p.tpxAssignee||'',p.clientAssignee||'',p.acceptanceCriteria||'',p.signoffResponsible||'',p.createdDate||'',p.resolvedDate||'',p.internalStatus||'',p.internalNotes||'']);
+  });
+  return rows;
+}
+
+function downloadCSVasXLSX(rows, filename){
+  // Export as UTF-8 CSV with BOM — Excel opens this correctly as "xlsx-like"
+  const csv=rows.map(r=>r.map(v=>{
+    const s=String(v??'').replace(/"/g,'""');
+    return (s.includes(','))||s.includes('\n')||s.includes('"') ? `"${s}"` : s;
+  }).join(',')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast(`${filename} gedownload`,'ok');
+}
+
+// ── XLSX IMPORT ───────────────────────────────────────────────────────────────
+function handleXLSXDrop(e){
+  e.preventDefault();
+  document.getElementById('xlsxDropZone').style.borderColor='#d0dce8';
+  document.getElementById('xlsxDropZone').style.background='';
+  const file=e.dataTransfer.files[0];
+  if(file) handleXLSXFile(file);
+}
+
+function handleXLSXFile(file){
+  if(!file) return;
+  if(file.size>5*1024*1024){showToast('Bestand te groot (max 5MB)','error');return;}
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['csv','xlsx'].includes(ext)){showToast('Alleen .csv en .xlsx bestanden','error');return;}
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=ext==='csv'
+        ? e.target.result
+        : xlsxToCSV(e.target.result); // basic xlsx → csv conversion
+      parseImportCSV(text, file.name);
+    }catch(err){
+      showToast('Bestand kon niet worden ingelezen: '+err.message,'error');
+    }
+  };
+  if(ext==='csv') reader.readAsText(file,'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function xlsxToCSV(buffer){
+  // Minimal XLSX reader — extracts first sheet as CSV
+  // XLSX is a ZIP file — we use a simple string scan for shared strings + sheet data
+  // For production use, recommend SheetJS library
+  throw new Error('XLSX upload: gebruik een CSV export (sla op als CSV in Excel). XLSX binair formaat vereist een extra library.');
+}
+
+function parseImportCSV(text, filename){
+  // Strip BOM if present
+  const clean=text.replace(/^\uFEFF/,'');
+  const lines=clean.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2){showToast('Bestand lijkt leeg of heeft geen data rijen','warn');return;}
+
+  // Parse CSV respecting quoted fields
+  const parseRow=line=>{
+    const result=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){ if(inQ&&line[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+      else if(ch===','&&!inQ){ result.push(cur.trim());cur=''; }
+      else cur+=ch;
+    }
+    result.push(cur.trim());
+    return result;
+  };
+
+  const headers=parseRow(lines[0]).map(h=>h.toLowerCase().replace(/\s+/g,'_').replace(/[()€]/g,''));
+  const rows=lines.slice(1).map(l=>parseRow(l));
+
+  // Map header → column index
+  const col=(name)=>{
+    const aliases={
+      'id':['id','#'],
+      'feature':['feature','feature_naam'],
+      'domain':['domein','domain'],
+      'wi':['work_item_groep','wi','groep'],
+      'desc':['beschrijving','description','desc'],
+      'cat':['categorie','cat','category'],
+      'moscow':['moscow','prioriteit'],
+      'scope':['scope'],
+      'size':['grootte','size'],
+      'estimatedHours':['est_u','est_(u)','estimated_hours','estimated_u'],
+      'actualHours':['actuals_u','actuals_(u)','actual_hours','actuals'],
+      'status':['status'],
+      'tpxAssignee':['tpx_assignee','tpx'],
+      'clientAssignee':['klant_assignee','klant'],
+      'acceptanceCriteria':['acceptatiecriteria','acceptance_criteria','ac'],
+      'signoffResponsible':['sign-off_verantw.','signoff_verantw','signoff_responsible'],
+      'createdDate':['aangemaakt','created_date'],
+      'resolvedDate':['opgelost','resolved_date'],
+    };
+    const alts=aliases[name]||[name];
+    for(const alt of alts){ const idx=headers.indexOf(alt); if(idx>=0) return idx; }
+    return -1;
+  };
+
+  const idCol=col('id');
+  if(idCol<0){showToast('Kolom "ID" niet gevonden in bestand','error');return;}
+
+  // Build preview + parsed data
+  let newCount=0, updateCount=0, skipCount=0;
+  const parsed=[];
+
+  rows.forEach((row,i)=>{
+    if(row.every(c=>!c)) return; // skip empty rows
+    const id=safeInt(row[idCol]);
+    if(!id){skipCount++;return;}
+
+    const entry={id};
+    const g=k=>{ const c=col(k); return c>=0&&row[c]!==undefined?String(row[c]).trim():''; };
+    if(g('feature')) entry.feature=safeStr(g('feature'),200);
+    if(g('domain'))  entry.domain=safeStr(g('domain'),100);
+    if(g('wi'))      entry.wi=safeStr(g('wi'),100);
+    if(g('desc'))    entry.desc=safeStr(g('desc'),500);
+    if(g('cat'))     entry.cat=safeStr(g('cat'),50);
+    if(g('moscow'))  entry.moscow=safeStr(g('moscow'),50);
+    if(g('scope'))   entry.scope=safeStr(g('scope'),50);
+
+    // PM state fields
+    const pmFields={};
+    if(g('size'))              pmFields.size=g('size')||null;
+    if(g('estimatedHours'))    pmFields.estimatedHours=safeFloat(g('estimatedHours'),null,0,9999);
+    if(g('actualHours'))       pmFields.actualHours=safeFloat(g('actualHours'),null,0,9999);
+    if(g('status'))            pmFields.status=g('status')||'todo';
+    if(g('tpxAssignee'))       pmFields.tpxAssignee=safeStr(g('tpxAssignee'),100);
+    if(g('clientAssignee'))    pmFields.clientAssignee=safeStr(g('clientAssignee'),100);
+    if(g('acceptanceCriteria'))pmFields.acceptanceCriteria=safeStr(g('acceptanceCriteria'),1000);
+    if(g('signoffResponsible'))pmFields.signoffResponsible=safeStr(g('signoffResponsible'),100);
+    if(g('createdDate'))       pmFields.createdDate=g('createdDate');
+    if(g('resolvedDate'))      pmFields.resolvedDate=g('resolvedDate');
+    entry.pmFields=pmFields;
+
+    const existing=RAW.find(r=>r.id===id);
+    if(existing) updateCount++; else newCount++;
+    parsed.push(entry);
+  });
+
+  if(!parsed.length){showToast('Geen geldige rijen gevonden','warn');return;}
+
+  _xlsxImportData=parsed;
+
+  // Show preview
+  const previewCols=['ID','Feature','Domein','Size','Status','Grootte'];
+  const previewRows=parsed.slice(0,10);
+  let tableHtml=`<thead><tr>${previewCols.map(c=>`<th style="background:#F4F6FA;padding:5px 8px;font-size:10px;font-weight:600;color:#6b7fa3;text-align:left;border-bottom:1px solid #e0e8f5">${c}</th>`).join('')}</tr></thead><tbody>`;
+  previewRows.forEach(r=>{
+    const existing=RAW.find(x=>x.id===r.id);
+    const rowStyle=!existing?'background:#F0F9FF':'';
+    tableHtml+=`<tr style="${rowStyle}">
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa">${r.id}</td>
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa">${escHtml((r.feature||existing?.feature||'').substring(0,30))}</td>
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa">${escHtml(r.domain||existing?.domain||'')}</td>
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa">${escHtml(r.pmFields?.size||getPM(r.id)?.size||'')}</td>
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa">${escHtml(r.pmFields?.status||'')}</td>
+      <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #f0f4fa;color:${!existing?'#1E6FD9':'#6b7fa3'}">${!existing?'Nieuw':'Update'}</td>
+    </tr>`;
+  });
+  if(parsed.length>10) tableHtml+=`<tr><td colspan="6" style="padding:6px 8px;font-size:11px;color:#6b7fa3;font-style:italic">... en ${parsed.length-10} meer rijen</td></tr>`;
+  tableHtml+='</tbody>';
+
+  document.getElementById('xlsxPreviewTable').innerHTML=tableHtml;
+  document.getElementById('xlsxPreviewTitle').textContent=`Voorbeeld: ${filename}`;
+  document.getElementById('xlsxPreviewStats').innerHTML=`<strong>${parsed.length}</strong> rijen gevonden · <span style="color:#1E6FD9">${newCount} nieuw</span> · <span style="color:#F59E0B">${updateCount} updates</span>${skipCount?` · ${skipCount} overgeslagen`:''}`;
+  document.getElementById('xlsxPreview').style.display='block';
+  document.getElementById('xlsxImportBtn').style.display='block';
+}
+
+async function executeXLSXImport(){
+  if(!_xlsxImportData||!_xlsxImportData.length){showToast('Geen data om te importeren','warn');return;}
+  closeXLSXImport();
+  showLoading(true);
+
+  let added=0, updated=0;
+  const dirtyIds=[];
+
+  _xlsxImportData.forEach(entry=>{
+    const existing=RAW.find(r=>r.id===entry.id);
+    if(existing){
+      // Update item definition fields
+      if(entry.feature) existing.feature=entry.feature;
+      if(entry.domain)  existing.domain=entry.domain;
+      if(entry.wi!==undefined) existing.wi=entry.wi;
+      if(entry.desc!==undefined) existing.desc=entry.desc;
+      if(entry.cat!==undefined) existing.cat=entry.cat;
+      if(entry.moscow!==undefined) existing.moscow=entry.moscow;
+      if(entry.scope!==undefined) existing.scope=entry.scope;
+      updated++;
+    } else {
+      // New item
+      RAW.push({id:entry.id, wi:entry.wi||'', domain:entry.domain||'', feature:entry.feature||'', desc:entry.desc||'', cat:entry.cat||'', moscow:entry.moscow||'', scope:entry.scope||''});
+      pm[entry.id]=defaultPMState();
+      signoffs[entry.id]={status:'pending',signedBy:'',signedAt:'',remark:''};
+      added++;
+    }
+    // Apply PM state fields
+    if(entry.pmFields && Object.keys(entry.pmFields).length){
+      const p=getPM(entry.id);
+      Object.assign(p, entry.pmFields);
+      dirtyIds.push(entry.id);
+    }
+  });
+
+  // Sync to Supabase
+  try{
+    await syncWorkItemDefs(RAW, []);
+    for(const id of dirtyIds) await saveToSupabase(id);
+  }catch(e){
+    console.error('Import sync failed',e);
+  }
+
+  showLoading(false);
+  initDomainFilter();
+  renderAll();
+  showToast(`Import klaar: ${added} nieuw, ${updated} bijgewerkt`,'ok',4000);
+  _xlsxImportData=null;
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function initDomainFilter(){
