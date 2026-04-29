@@ -234,6 +234,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* PDF button */
 .hbtn.pdf{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6EE7B7}
 .hbtn.pdf:hover{background:rgba(16,185,129,.25)}
+/* PDF MODAL */
+.pdf-modal{background:#fff;border-radius:12px;padding:28px;width:500px;max-width:100%}
+.pdf-modal h2{font-size:16px;font-weight:700;color:#0D1F3C;margin-bottom:6px}
+.pdf-modal p{font-size:12px;color:#6b7fa3;margin-bottom:20px}
+.pdf-options{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.pdf-opt{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid #e0e8f5;border-radius:8px;cursor:pointer;transition:border .15s}
+.pdf-opt:hover{border-color:#1E6FD9;background:#F8FAFF}
+.pdf-opt.selected{border-color:#1E6FD9;background:#EFF6FF}
+.pdf-opt input[type=radio]{margin-top:2px;accent-color:#1E6FD9}
+.pdf-opt-title{font-size:13px;font-weight:600;color:#0D1F3C}
+.pdf-opt-desc{font-size:11px;color:#6b7fa3;margin-top:2px}
 
 /* INTERNAL NOTES PANEL */
 .internal-panel{background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 10px;margin-top:5px;display:none}
@@ -448,13 +459,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <label>TPX</label><select id="fTPX"><option value="">Alle</option></select>
       <label>Klant</label><select id="fClient"><option value="">Alle</option></select>
       <label>Zoeken</label><input type="text" id="fSearch" placeholder="Zoek feature..." oninput="renderAll()">
+      <label>Sign-off</label><select id="fSignoffResp"><option value="">Alle</option></select>
+      <label><input type="checkbox" id="fOutScope" onchange="renderAll()"> Excl. out of scope</label>
       <label><input type="checkbox" id="fOverBudget" onchange="renderAll()"> Over budget</label>
     </div>
   </div>
 
   <div id="budgetSection">
     <div class="budget-box tpx-only">
-      <div class="bt"><span>Budget overzicht</span><span id="sizedCount" style="font-size:11px;font-weight:400;color:#6b7fa3"></span></div>
+      <div class="bt">
+        <span>Budget overzicht</span>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span id="sizedCount" style="font-size:11px;font-weight:400;color:#6b7fa3"></span>
+          <span id="finalSignoffDateDisplay" style="font-size:11px;color:#6b7fa3"></span>
+        </div>
+      </div>
       <div class="budget-grid" id="budgetGrid"></div>
     </div>
     <div class="prog-wrap tpx-only"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -604,6 +623,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- PDF EXPORT MODAL -->
+<div class="modal-bg" id="pdfModal">
+  <div class="pdf-modal">
+    <h2>⬇ PDF / Export genereren</h2>
+    <p>Kies wat je wil exporteren</p>
+    <div class="pdf-options">
+      <label class="pdf-opt selected" onclick="selectPDFOpt(this,'budget')">
+        <input type="radio" name="pdfType" value="budget" checked>
+        <div>
+          <div class="pdf-opt-title">Budget inschatting</div>
+          <div class="pdf-opt-desc">Overzicht per domein en item — ingeschatte kost, prioriteit, sign-off status</div>
+        </div>
+      </label>
+      <label class="pdf-opt" onclick="selectPDFOpt(this,'status')">
+        <input type="radio" name="pdfType" value="status">
+        <div>
+          <div class="pdf-opt-title">Project status rapport</div>
+          <div class="pdf-opt-desc">Voortgang per domein, items at risk, visuele progress bars</div>
+        </div>
+      </label>
+      <label class="pdf-opt" onclick="selectPDFOpt(this,'timesheet')">
+        <input type="radio" name="pdfType" value="timesheet">
+        <div>
+          <div class="pdf-opt-title">Timesheets</div>
+          <div class="pdf-opt-desc">Overzicht geboekte uren per consultant — PDF of Excel export</div>
+        </div>
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="mabtn" onclick="closePDFModal()">Annuleren</button>
+      <button class="mabtn save" onclick="generatePDFExport()">⬇ Genereren</button>
+    </div>
+  </div>
+</div>
+
 <!-- WORK ITEM EDITOR MODAL -->
 <div class="modal-bg" id="wiModal">
   <div class="wi-modal">
@@ -722,11 +776,10 @@ let config = {
 // ── USERS ────────────────────────────────────────────────────────────────────
 // roles: 'pm' (TPX projectmanager), 'tpx' (TPX member), 'client'
 let users = [
-  {name:'Jan',   email:'jan@tpx.eu',       pin:'1234', role:'pm',     tpxRole:'Project Manager', rateOverride:null},
-  {name:'Herre', email:'herre@tpx.eu',     pin:'2345', role:'tpx',    tpxRole:'Senior Consultant',rateOverride:null},
-  {name:'Stef',  email:'stef@tpx.eu',      pin:'3456', role:'tpx',    tpxRole:'Consultant',       rateOverride:null},
-  {name:'Finance Cafimo', email:'finance@cafimo.be', pin:'9001', role:'client', tpxRole:'', rateOverride:null},
-  {name:'IT Cafimo',      email:'it@cafimo.be',      pin:'9002', role:'client', tpxRole:'', rateOverride:null},
+  {name:'Jan Nackaerts', email:'jan.nackaerts@tpx.eu', pin:'1234', role:'admin', tpxRole:'Project Manager', rateOverride:null},
+  {name:'Wannes Roels',  email:'wannes.roels@tpx.eu',  pin:'2345', role:'pm',    tpxRole:'Project Manager',  rateOverride:null},
+  {name:'Tibo Dierickx', email:'tibo.dierickx@tpx.eu', pin:'3456', role:'tpx',   tpxRole:'Consultant',       rateOverride:null},
+  {name:'Cafimo',        email:'klant@cafimo.be',       pin:'9001', role:'client', tpxRole:'', rateOverride:null},
 ];
 
 let team = {
@@ -785,6 +838,7 @@ async function loadFromSupabase(){
         pm[row.id].acceptanceCriteria=row.acceptance_criteria||'';
         pm[row.id].createdDate=row.created_date||'';
         pm[row.id].resolvedDate=row.resolved_date||'';
+        pm[row.id].signoffResponsible=row.signoff_responsible||'';
       }
     });
   }catch(e){console.warn('Supabase work_items load failed',e);}
@@ -821,6 +875,7 @@ async function saveToSupabase(id){
       acceptance_criteria:p.acceptanceCriteria||'',
       created_date:p.createdDate||null,
       resolved_date:p.resolvedDate||null,
+      signoff_responsible:p.signoffResponsible||'',
       updated_at:new Date().toISOString()
     }]);
   }catch(e){console.warn('Supabase save failed',e);}
@@ -857,7 +912,7 @@ async function saveMilestone(ms){
 const RAW = [{"id":1,"wi":"Contact migration","domain":"Architecture","feature":"Contacts","desc":"- Setup of the contact master data structure in Odoo covering customers, supplie","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":2,"wi":"Contact migration","domain":"Architecture","feature":"Contact migration from legacy","desc":"- Migrate existing FileMaker; Adsolut contact data to Odoo - Import and validati","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":3,"wi":"Contact migration","domain":"Architecture","feature":"Multi-company setup (OCA)","desc":"- Enable multi-company limitation for contacts to specify for which company a co","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":4,"wi":"Contact migration","domain":"Architecture","feature":"Initial load","desc":"- Initial load of contact master data into Odoo covering customers, suppliers an","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":5,"wi":"Product migration","domain":"Architecture","feature":"Product categories","desc":"- Configuration of product categories in Odoo to group products for accounting, ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":6,"wi":"Product migration","domain":"Architecture","feature":"Vehicle definition","desc":"- Improve and standardize how vehicle data is used across the system, while rede","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":7,"wi":"Product migration","domain":"Architecture","feature":"Products definition","desc":"- Configuration of product types in Odoo (storable, consumable, service) to ensu","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":8,"wi":"Product migration","domain":"Architecture","feature":"Initial load","desc":"@Herre","cat":"","moscow":"Define need","scope":""},{"id":9,"wi":"CarsBO","domain":"Architecture","feature":"Phase out CarsBO module","desc":"","cat":"","moscow":"","scope":""},{"id":10,"wi":"Core Setup","domain":"Accounting","feature":"Opening Balance sheet","desc":"- Entry of the opening balance sheet in Odoo via a miscellaneous journal entry -","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":11,"wi":"Core Setup","domain":"Accounting","feature":"Opening Customers","desc":"- Entry of outstanding customer receivable at the start of Odoo - Each outstandi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":12,"wi":"Core Setup","domain":"Accounting","feature":"Opening Supplier","desc":"- Entry of outstanding supplier liabilities at the start of Odoo - All outstandi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":13,"wi":"Core Setup","domain":"Accounting","feature":"Historical P&L (YTD Comparison)","desc":"- Import of previous year's monthly P&L figures (account classes 6 and 7) into O","cat":"Fit","moscow":"Should have","scope":"In Scope"},{"id":14,"wi":"Core Setup","domain":"Accounting","feature":"Chart of Accounts","desc":"- Chart of accounts received from client and compared to Odoo standard CoA - Acc","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":15,"wi":"Core Setup","domain":"Accounting","feature":"Taxes & Fiscal Positions","desc":"- Configuration of VAT codes, VAT rates and fiscal positions in Odoo_x000D_ - Fi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":16,"wi":"Core Setup","domain":"Accounting","feature":"VIES / Intracommunity","desc":"- Configuration of VIES validation in Odoo for intra- community transactions - V","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":17,"wi":"Core Setup","domain":"Accounting","feature":"Journals (sequences)","desc":"- Creating and configuring accounting journals (sales, purchase, bank, cash, mis","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":18,"wi":"Core Setup","domain":"Accounting","feature":"Document management","desc":"- Configuration of the Odoo Documents app as a centralised document repository -","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":19,"wi":"Core Setup","domain":"Accounting","feature":"Miscellaneous entries","desc":"- Configuration and use of the general journal for manual journal entries_x000D_","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":20,"wi":"Accounts Receivable","domain":"Accounting","feature":"Customer Invoicing","desc":"- Setting up the complete customer invoicing process in Odoo_x000D_ - Covers cre","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":21,"wi":"Accounts Receivable","domain":"Accounting","feature":"Peppol compliance","desc":"- Configuration of Peppol e- invoicing compliance for outbound customer invoices","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":22,"wi":"Accounts Receivable","domain":"Accounting","feature":"Customer re- invoicing (recharging)","desc":"- Custom recharging feature to re- invoice one or multiple vendor bills to inter","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":23,"wi":"Accounts Receivable","domain":"Accounting","feature":"Follow- ups","desc":"- Configuration of the follow- up module for tracking outstanding customer invoi","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":24,"wi":"Accounts Receivable","domain":"Accounting","feature":"Limit customers with open receivables based on a thresh","desc":"- Configuration of a credit limit per customer at contact level in Odoo  - When ","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":25,"wi":"Accounts Payable","domain":"Accounting","feature":"Vendor Bills","desc":"- Setting up the vendor bill process in Odoo - Covers registration, linking to p","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":26,"wi":"Accounts Payable","domain":"Accounting","feature":"Peppol compliance","desc":"- Configuration of Peppol access point for receiving inbound vendor bills electr","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":27,"wi":"Accounts Payable","domain":"Accounting","feature":"Vendor Bill digisation","desc":"- Configuration of vendor bill intake via Odoo Documents app and OCR_x000D_ - Bi","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":28,"wi":"Accounts Payable","domain":"Accounting","feature":"Multi- vehicle Vendor Bill","desc":"- Handling of vendor bills covering multiple vehicles (transport bill) - One bil","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":29,"wi":"Accounts Payable","domain":"Accounting","feature":"Withholding obligation -  Art. 20bis","desc":"- Warning mechanism for suppliers subject to Belgian withholding obligation unde","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":30,"wi":"Accounts Payable","domain":"Accounting","feature":"Road taks processing (verkeersbelasting)","desc":"- Automated processing of large volumes of road tax assessment notices (aanslagb","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":31,"wi":"Accounts Payable","domain":"Accounting","feature":"Provisional Costs (Landed costs, transport)","desc":"- Provisional cost entries for transport and commission accrued at time of vehic","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":32,"wi":"Approvals","domain":"Accounting","feature":"Approval routing","desc":"- Vendor bills are routed to the correct approver before posting based on config","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":33,"wi":"Approvals","domain":"Accounting","feature":"Mass approval","desc":"- From the vendor bill list view, multiple bills can be selected and submitted f","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":34,"wi":"Approvals","domain":"Accounting","feature":"Approval deviation","desc":"- An approver can deviate an incoming approval request to another person when th","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":35,"wi":"Approvals","domain":"Accounting","feature":"Centralied approval communication","desc":"- All communication related to the approval of a vendor bill is centralised on t","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":36,"wi":"Approvals","domain":"Accounting","feature":"Approval security","desc":"- A user with minimal or no accounting access rights can approve a vendor bill w","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":37,"wi":"Bank & payments","domain":"Accounting","feature":"Bank Feeds (CODA/CAMT)","desc":"- Connecting bank statements to Odoo via CODA (BE) - Bank statements automatical","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":38,"wi":"Bank & payments","domain":"Accounting","feature":"Reconciliation","desc":"- Reconciliation of bank statements with outstanding invoices and entries in Odo","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":39,"wi":"Bank & payments","domain":"Accounting","feature":"(pre)Payments","desc":"- Registration and processing of payments in Odoo (incoming and outgoing)  - SEP","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":40,"wi":"Bank & payments","domain":"Accounting","feature":"Batch Payments","desc":"- Grouping of multiple payments into one SEPA batch payment file per payment run","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":41,"wi":"Bank & payments","domain":"Accounting","feature":"Payment swap","desc":"- Structured flow to correct payments linked to the wrong sales order_x000D_ - P","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":42,"wi":"Bank & payments","domain":"Accounting","feature":"Straight loan -  fixed advance","desc":"- Recording and tracking of straight loans or fixed advances from the bank_x000D","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":43,"wi":"Bank & payments","domain":"Accounting","feature":"Bank account validation","desc":"- Matching mechanism checks account holder name against invoice or proforma","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":44,"wi":"Bank & payments","domain":"Accounting","feature":"bank accounts -  TPX module","desc":"- Documents linked to a bank account and stored in predefined folders in the Doc","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":45,"wi":"Bank & payments","domain":"Accounting","feature":"Report bank accounts -  TPX module","desc":"- Report available under Accounting showing all changes made to bank account num","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":46,"wi":"Bank & payments","domain":"Accounting","feature":"Currencies","desc":"- Configuration of foreign currencies including automatic exchange rate updates ","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":47,"wi":"Bank & payments","domain":"Accounting","feature":"Credit Card flow","desc":"- Configuration of a Credit Card Journal in Odoo_x000D_ - Expenses processed and","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":48,"wi":"Analytical accounting","domain":"Accounting","feature":"Analytic Accounts","desc":"- Setting up analytic accounts and plans for internal reporting_x000D_ - Reporti","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":49,"wi":"Analytical accounting","domain":"Accounting","feature":"Analytic Budgets","desc":"- Creating and managing analytic budgets in Odoo_x000D_ - Actual costs and reven","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":50,"wi":"Analytical accounting","domain":"Accounting","feature":"Fleet","desc":"- Managing vehicles and related costs in Odoo Fleet_x000D_ - Integration with ac","cat":"Fit","moscow":"Should have","scope":"In Scope"},{"id":51,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Cost traceability per vehicle","desc":"- All costs and revenues related to a vehicle are tracked via the chassis number","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":52,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Analtyic plan & account configuration","desc":"- Configure one analytic plan 'vehicles' in Odoo.  - One analytic account is cre","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":53,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Cost type mapping description","desc":"- All revelant cost types are analyticcaly linked to the VIN at the point of pos","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":54,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Revenue mapping description","desc":"- Sales invoices and rechages costs billed are analytically linked to te corresp","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":55,"wi":"Stock valuation","domain":"Accounting","feature":"Costing methods","desc":"- Configuration of inventory costing methods in Odoo (standard price, average co","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":56,"wi":"Stock valuation","domain":"Accounting","feature":"Inventory valuation","desc":"- Configuration of automated inventory valuation in Odoo to ensure that all stoc","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":57,"wi":"Reporting","domain":"Accounting","feature":"Accounting period control","desc":"- Configuration of a period control mechanism to ensure bills are booked in the ","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":58,"wi":"Reporting","domain":"Accounting","feature":"Financial & management reporting","desc":"- Configuration of financial and management reports in Odoo_x000D_ - Covers bala","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":59,"wi":"Reporting","domain":"Accounting","feature":"Statutory & Tax reporting","desc":"- Setting up statutory and tax reports in Odoo_x000D_ - Covers VAT return, custo","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":60,"wi":"Reporting","domain":"Accounting","feature":"Audit & Compliance","desc":"- Setting up audit trails and compliance controls in Odoo - All accounting chang","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":61,"wi":"Reporting","domain":"Accounting","feature":"Weekly bank report","desc":"- Weekly reporting flow providing the bank with a credit line position overview_","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":62,"wi":"Reporting","domain":"Accounting","feature":"Consolidated reporting -  horizontal groups","desc":"- Setting up consolidated financial reporting across multiple entities (horizont","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":63,"wi":"Reporting","domain":"Accounting","feature":"Intrastat","desc":"- Configuration of Intrastat reporting for intra- community goods movements - Ve","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":64,"wi":"Reporting","domain":"Accounting","feature":"Asset management","desc":"- Managing fixed assets in Odoo - Configuring depreciation plans (straight- line","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":65,"wi":"Reporting","domain":"Accounting","feature":"Deferred costs & revenues","desc":"- Setting up deferred costs (prepaid expenses) and deferred revenues (unearned i","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":66,"wi":"Reporting","domain":"Accounting","feature":"Bills to receive & invoices to be issued.","desc":"- Accruals reports for tracking goods/services received but not yet invoiced (bi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":67,"wi":"Reporting","domain":"Accounting","feature":"Cars dashboard - Stock valuation + accruals per VIN","desc":"A per-VIN vehicle dashboard in Odoo that replaces the current manual Excel stock","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":68,"wi":"Reporting","domain":"Accounting","feature":"Lock dates","desc":"- Setting lock dates in Odoo to protect closed periods_x000D_ - Entries in a loc","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":69,"wi":"Reporting","domain":"Accounting","feature":"Marge register","desc":"- Margin report for second- hand vehicle trading under the VAT margin scheme_x00","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":70,"wi":"Reporting","domain":"Accounting","feature":"Garage register","desc":"- Digital garage register as required by the Belgian VAT administration for Cafi","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":71,"wi":"Core Setup","domain":"Inventory","feature":"Warehouse","desc":"- Configuration and/or mapping of warehouses in Odoo. - One Warehouse to manage ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":72,"wi":"Core Setup","domain":"Inventory","feature":"Locations","desc":"- Configuration of inventory locations in Odoo including storage locations, virt","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":73,"wi":"Core Setup","domain":"Inventory","feature":"Creation of location based on stock location per partne","desc":"- On warehouse level enhanced configuration allows to automatically create locat","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":74,"wi":"Core Setup","domain":"Inventory","feature":"Storage categories","desc":"- Setup of storage categories for related characteristics per inventory location","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":75,"wi":"Core Setup","domain":"Inventory","feature":"Physical location of vehicles","desc":"- Each vehicle holds a physical location which is not maintained under a default","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":76,"wi":"Inventory master data","domain":"Inventory","feature":"Units of measure","desc":"- Configuration of units of measure in Odoo for inventory management, including ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":77,"wi":"Inventory master data","domain":"Inventory","feature":"Removal strategy","desc":"- Configuration of picking strategies in Odoo such as first in first out, closes","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":78,"wi":"Inventory master data","domain":"Inventory","feature":"Packaging","desc":"- Configuration of product packaging in Odoo to manage how products are packed f","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":79,"wi":"Inventory master data","domain":"Inventory","feature":"Expiration dates","desc":"- Configuration of expiration date tracking in Odoo for products with a limited ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":80,"wi":"Reporting","domain":"Inventory","feature":"Serial numbers","desc":"- Configuration of lot and serial number traceability in Odoo to track unique se","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":81,"wi":"Operations","domain":"Inventory","feature":"Operation types","desc":"- Configuration of operation types in Odoo to define the different types of move","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":82,"wi":"Operations","domain":"Inventory","feature":"Barcode scanning","desc":"- Configuration of barcode scanning in Odoo for warehouse operations including r","cat":"Gap","moscow":"No need","scope":"Out of Scope"},{"id":83,"wi":"Operations","domain":"Inventory","feature":"Reservation method","desc":"- Configuration of stock reservation  in Odoo to allocate available stock to con","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":84,"wi":"Operations","domain":"Inventory","feature":"Incoming transfers","desc":"- Configuration of the transfer flow in Odoo where each transfer corresponds to ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":85,"wi":"Operations","domain":"Inventory","feature":"Grouping incoming transfers","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":86,"wi":"Operations","domain":"Inventory","feature":"Add missing components on receipts (creation of unique ","desc":"- 2nd key; \u2026  - List of items on transfer / vehicles - List of standard item - C","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":87,"wi":"Operations","domain":"Inventory","feature":"Documents as loose items","desc":"- Different handling","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":88,"wi":"Operations","domain":"Inventory","feature":"Internal transfers","desc":"- Configuration of internal transfer operations in Odoo for moving stock between","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":89,"wi":"Operations","domain":"Inventory","feature":"Outgoing tranfers","desc":"- Configuration of the transfer flow in Odoo where each transfer corresponds to ","cat":"","moscow":"Define need","scope":"In Scope"},{"id":90,"wi":"Operations","domain":"Inventory","feature":"Grouping outgoing tranfers","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":91,"wi":"Operations","domain":"Inventory","feature":"Backorders","desc":"- Configuration of the inventory backorder flow for partially fulfilled orders -","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":92,"wi":"Core Operations","domain":"Inventory","feature":"Quality checks","desc":"- Configuration of quality check points in Odoo inventory operations to inspect ","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":93,"wi":"Operations","domain":"Inventory","feature":"Shipping","desc":"- Configuration of carrier integration in Odoo for outbound shipments including ","cat":"Gap","moscow":"Define need","scope":"Out of Scope"},{"id":94,"wi":"Operations","domain":"Inventory","feature":"Batch management","desc":"- Configuration of batch transfers in Odoo for both inbound and outbound vehicle","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":95,"wi":"Routes & rules","domain":"Inventory","feature":"Buy from vendor","desc":"- Configuration of inventory routes & rules in Odoo to define how products moved","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":96,"wi":"Routes & rules","domain":"Inventory","feature":"Buy from consignment","desc":"- Goods stored under consignment are purchased from the vendor while being servi","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":97,"wi":"Routes & rules","domain":"Inventory","feature":"Sell to customer","desc":"- Configuration of general stock sales to Customer in Odoo for owned goods.","cat":"","moscow":"Define need","scope":"In Scope"},{"id":98,"wi":"Routes & rules","domain":"Inventory","feature":"Sell consignment stock to customer","desc":"- Consignment sales to customer","cat":"","moscow":"Define need","scope":"In Scope"},{"id":99,"wi":"Routes & rules","domain":"Inventory","feature":"Sell via consignee customer","desc":"- Configuration of consignee stock sales in Odoo for owned good stored at a thir","cat":"","moscow":"Define need","scope":"In Scope"},{"id":100,"wi":"Routes & rules","domain":"Inventory","feature":"Sell virtual stock to customer","desc":"- Virtual stock sales to customer - Stock is not stored or procured upfront; onl","cat":"","moscow":"Define need","scope":"In Scope"},{"id":101,"wi":"Routes & rules","domain":"Inventory","feature":"Replenishment","desc":"- Configuration of inventory reordering rules in Odoo to automatically generate ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":102,"wi":"Control","domain":"Inventory","feature":"Days in stock","desc":"- A daily update to register the amount of days a vehicle is stored per warehous","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":103,"wi":"Control","domain":"Inventory","feature":"Filling rate & forecast","desc":"- Add counter on location level and define capacity per location - Calculate fil","cat":"Define category","moscow":"Must have","scope":"In Scope"},{"id":104,"wi":"Control","domain":"Inventory","feature":"VIN Validation & Duplicate prevention","desc":"- Configuration of a mandatory VIN (chassis number) validation flow in Odoo to p","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":105,"wi":"Control","domain":"Inventory","feature":"Cross-transfer search on VIN number.","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":106,"wi":"Control","domain":"Inventory","feature":"Optimization of the CARS Int'l application","desc":"- 1 app for all inventory related topics - 1 app for transport - Search on VIN; ","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":107,"wi":"Documents","domain":"Inventory","feature":"Vehicle Sheet (Carsbo + Odoo)","desc":"- Configuration of the vehicle sheet in Odoo as the central record for each vehi","cat":"","moscow":"Must have","scope":"In Scope"},{"id":108,"wi":"Documents","domain":"Inventory","feature":"QR code under Vehicle sheet","desc":"To define","cat":"","moscow":"Won't have","scope":"In Scope"},{"id":109,"wi":"Documents","domain":"Inventory","feature":"PDI Pre Dilvery Inspection","desc":"- Configuration of the pre- delivery inspection flow in Odoo as a quality check ","cat":"","moscow":"Should have","scope":"In Scope"},{"id":110,"wi":"Documents","domain":"Inventory","feature":"PUA Creation","desc":"- Configuration of the outgoing transfer flow in Odoo including the mandatory ge","cat":"","moscow":"Must have","scope":"In Scope"},{"id":111,"wi":"Documents","domain":"Inventory","feature":"CMR","desc":"- A CMR (Convention on the Contract for the International Carriage of Goods by R","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":112,"wi":"Scrap & Physical inventory","domain":"Inventory","feature":"Cycle counting","desc":"- Configuration of cycle counting on location in Odoo to perform ongoing partial","cat":"","moscow":"No need","scope":"Out of Scope"},{"id":113,"wi":"Scrap & Physical inventory","domain":"Inventory","feature":"Scrapping of stock","desc":"- Configuration of the scrap flow in Odoo to remove damaged or unusable products","cat":"","moscow":"No need","scope":"Out of Scope"},{"id":114,"wi":"Reporting","domain":"Inventory","feature":"Stock reporting","desc":"- Use of standard inventory reports in Odoo including current stock levels, stoc","cat":"","moscow":"Define need","scope":"In Scope"},{"id":115,"wi":"3trd party logistic services","domain":"Inventory","feature":"Service level agreements","desc":"- Configuration of service level agreements per 3PL related customer in Odoo def","cat":"","moscow":"Define need","scope":"In Scope"},{"id":116,"wi":"3trd party logistic services","domain":"Inventory","feature":"Receive in consignment","desc":"- Configuration of consignment stock management in Odoo for vehicles owned by th","cat":"","moscow":"Define need","scope":"In Scope"},{"id":117,"wi":"3trd party logistic services","domain":"Inventory","feature":"Flow from Salesorder","desc":"","cat":"","moscow":"Define need","scope":""},{"id":118,"wi":"3trd party logistic services","domain":"Inventory","feature":"Return ouf of consignment","desc":"- Configuration of consignment stock management in Odoo for vehicles owned by th","cat":"","moscow":"Define need","scope":"In Scope"},{"id":119,"wi":"3trd party logistic services","domain":"Inventory","feature":"Task management","desc":"- Configuration of the 3PL task management flow in Odoo for logistics services p","cat":"","moscow":"Define need","scope":"In Scope"},{"id":120,"wi":"3trd party logistic services","domain":"Inventory","feature":"Recurring tasks for charging of vehicles","desc":"- Key parameters include charging intervals (30/60/90 days), carwash rules and f","cat":"","moscow":"Define need","scope":"In Scope"},{"id":121,"wi":"3trd party logistic services","domain":"Inventory","feature":"Time based tasks on demand","desc":"- Time-based tasks on demand","cat":"","moscow":"Define need","scope":"In Scope"},{"id":122,"wi":"3trd party logistic services","domain":"Inventory","feature":"Returning with open tasks","desc":"- Returning with open tasks if coming from repairs","cat":"","moscow":"Define need","scope":"In Scope"},{"id":123,"wi":"3trd party logistic services","domain":"Inventory","feature":"External cost allocation on tasks via Sales orders","desc":"- Tasks performed on stock of other stock owners is charged at a SLO defined cos","cat":"","moscow":"Define need","scope":"In Scope"},{"id":124,"wi":"3trd party logistic services","domain":"Inventory","feature":"Internal cost allocation on tasks","desc":"- Internal tasks for Carconnex own stock are registered at zero cost for billing","cat":"","moscow":"Define need","scope":"In Scope"},{"id":125,"wi":"3trd party logistic services","domain":"Inventory","feature":"Month-end Invoicing","desc":"- Configuration of the month- end invoicing run for 3PL customers based on the d","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":126,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk setup","desc":"- Configuration of the repair and damage management flow in Odoo to replace the ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":127,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Ticket categorisation","desc":"- Each ticket should be categorized on claim or damage and on responsible party.","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":128,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk linked to vehicles","desc":"- Ticket can be linked to vehicles for tracebility.","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":129,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk from transfer","desc":"- During the processing of a transfer the creation of a helpdesk ticket should b","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":130,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"RFQ from helpdesk","desc":"- Purchase quotations (bestekken) can be linked to the repair dossier - All repa","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":131,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Quotaton from helpdesk","desc":"- All repair costs analytically linked to the chassis number","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":132,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Recharge invoices","desc":"- Damage can be recharged to third parties with a markup","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":133,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Track inventory on repair","desc":"- Damages vehicles can be moved to vendors - Vehicles under repair can be tracke","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":134,"wi":"Core Setup","domain":"Projects","feature":"Project templates","desc":"- Configuration of project templates in Odoo to standardise the setup of new pro","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":135,"wi":"Core Setup","domain":"Projects","feature":"Task stages","desc":"- Configuration of task stages in Odoo to define the workflow through which task","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":136,"wi":"Tasks","domain":"Projects","feature":"Task creation","desc":"- Configuration of the task creation flow in Odoo including required fields, ass","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":137,"wi":"Tasks","domain":"Projects","feature":"Task assignment","desc":"- Configuration of task assignment rules in Odoo to ensure tasks are routed to t","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":138,"wi":"Tasks","domain":"Projects","feature":"Subtasks","desc":"- Configuration of subtask functionality in Odoo to break down complex tasks int","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":139,"wi":"Tasks","domain":"Projects","feature":"Dependencies","desc":"- Configuration of task dependencies in Odoo to define which tasks must be compl","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":140,"wi":"Planning","domain":"Projects","feature":"Resource planning","desc":"- Configuration of resource planning in Odoo to allocate team members to project","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":141,"wi":"Planning","domain":"Projects","feature":"Capacity planning","desc":"- Configuration of capacity planning in Odoo to provide management with a forwar","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":142,"wi":"Planning","domain":"Projects","feature":"Scheduling","desc":"- Configuration of project scheduling in Odoo including start and end dates, mil","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":143,"wi":"Time Tracking","domain":"Projects","feature":"Timesheets","desc":"- Configuration of timesheet logging in Odoo for project team members to record ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":144,"wi":"Time Tracking","domain":"Projects","feature":"Billable time","desc":"- Configuration of billable time tracking in Odoo to distinguish between billabl","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":145,"wi":"Time Tracking","domain":"Projects","feature":"Timesheet approval","desc":"- Configuration of the timesheet approval flow in Odoo where logged hours are re","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":146,"wi":"Billing","domain":"Projects","feature":"Time & material billing","desc":"- Configuration of time and material billing in Odoo where customers are invoice","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":147,"wi":"Billing","domain":"Projects","feature":"Fixed price billing","desc":"- Configuration of fixed price billing in Odoo where customers are invoiced a pr","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":148,"wi":"Billing","domain":"Projects","feature":"Milestone billing","desc":"- Configuration of milestone- based billing in Odoo where invoices are triggered","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":149,"wi":"Billing","domain":"Projects","feature":"Prepaid services","desc":"- Configuration of prepaid service billing in Odoo where customers pay upfront f","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":150,"wi":"Cost Control","domain":"Projects","feature":"Project costs","desc":"- Configuration of project cost tracking in Odoo to capture all direct costs (la","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":151,"wi":"Cost Control","domain":"Projects","feature":"Budget tracking","desc":"- Configuration of project budgets in Odoo to set planned costs and revenues per","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":152,"wi":"Cost Control","domain":"Projects","feature":"Margin analysis","desc":"- Configuration of project margin analysis in Odoo to show the gross margin per ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":153,"wi":"Collaboration","domain":"Projects","feature":"Document management","desc":"- Configuration of document management within projects in Odoo, allowing project","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":154,"wi":"Reporting","domain":"Projects","feature":"Project profitability","desc":"- Configuration of project profitability reporting in Odoo to give management a ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":155,"wi":"Reporting","domain":"Projects","feature":"Utilization rates","desc":"- Configuration of utilisation rate reporting in Odoo to show the percentage of ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":156,"wi":"Core Setup","domain":"Purchasing","feature":"Supplier pricelists","desc":"- Configuration of supplier pricelists in Odoo to manage purchase prices per ven","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":157,"wi":"Core Setup","domain":"Purchasing","feature":"Purchase units of measure","desc":"- Configuration of units of measure for purchasing, including conversions betwee","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":158,"wi":"Core Setup","domain":"Purchasing","feature":"Lead times","desc":"- Configuration of vendor lead times and security lead times in Odoo to ensure a","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":159,"wi":"Core Setup","domain":"Purchasing","feature":"Purchase agreements","desc":"- Configuration of purchase agreements in Odoo including blanket orders and purc","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":160,"wi":"Core Setup","domain":"Purchasing","feature":"Approval rules","desc":"- Configuration of purchase approval rules based on order amount or product cate","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":161,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Request for Quotation","desc":"- Setup and use of the request for quotation flow in Odoo_x000D_ - RFQs are sent","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":162,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Alternatives","desc":"- Configuration of the vendor comparison tool in Odoo to evaluate multiple suppl","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":163,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase Order creation","desc":"- Setup of the standard purchase order creation flow in Odoo, including manual c","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":164,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Blanket orders","desc":"- Configuration and use of blanket orders in Odoo to commit to purchasing a cert","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":165,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase order changes","desc":"- Configuration of the flow for modifying confirmed purchase orders, including q","cat":"Fit","moscow":"Define need","scope":""},{"id":166,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase order types","desc":"- Configuration of different purchase order types in Odoo to distinguish between","cat":"Gap","moscow":"Must have","scope":""},{"id":167,"wi":"Transport ordering","domain":"Purchasing","feature":"Transport legs","desc":"From transfer, transport legs will be created","cat":"Gap","moscow":"Must have","scope":""},{"id":168,"wi":"Transport ordering","domain":"Purchasing","feature":"Transport management (Link transfers/vehicles)","desc":"- Configuration of transport management within the purchasing flow, including th","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":170,"wi":"Transport ordering","domain":"Purchasing","feature":"Custom application","desc":"","cat":"","moscow":"","scope":""},{"id":171,"wi":"Transport ordering","domain":"Purchasing","feature":"Pick up & Drop off location","desc":"- Configuration of pick-up and drop-off address fields on the transfer (incoming","cat":"","moscow":"","scope":""},{"id":172,"wi":"Transport ordering","domain":"Purchasing","feature":"Source location","desc":"","cat":"","moscow":"","scope":""},{"id":173,"wi":"Transport ordering","domain":"Purchasing","feature":"Seller / buyer managed on PO","desc":"","cat":"","moscow":"","scope":""},{"id":174,"wi":"Transport ordering","domain":"Purchasing","feature":"Incoterms","desc":"- Configuration of Incoterms on purchase orders to define the point at which ris","cat":"","moscow":"","scope":""},{"id":175,"wi":"Transport ordering","domain":"Purchasing","feature":"HS Codes","desc":"- Configuration of Harmonised System (HS) codes on products in Odoo to support c","cat":"Fit","moscow":"Must have","scope":""},{"id":176,"wi":"Transport ordering","domain":"Purchasing","feature":"Country groups","desc":"- Grouping transport per country group (BE, NON BE, EU,\u2026)","cat":"","moscow":"","scope":""},{"id":177,"wi":"Transport ordering","domain":"Purchasing","feature":"Link batch to PO's","desc":"- Transport is managed from transport legs, substructure from a transfer. Each l","cat":"Gap","moscow":"Define need","scope":""},{"id":178,"wi":"Receiving","domain":"Purchasing","feature":"Drop- shipping","desc":"- Configuration of the drop- shipping route in Odoo where goods are shipped dire","cat":"Fit","moscow":"Must have","scope":"Out of Scope"},{"id":179,"wi":"Billing","domain":"Purchasing","feature":"2- way matching (PO matching)","desc":"- Configuration of 2- way matching in Odoo where vendor bills are matched agains","cat":"Fit","moscow":"Define need","scope":""},{"id":180,"wi":"Billing","domain":"Purchasing","feature":"3- way matching","desc":"- Configuration of 3- way matching in Odoo where vendor bills are validated agai","cat":"Fit","moscow":"No need","scope":""},{"id":181,"wi":"Billing","domain":"Purchasing","feature":"Vendor bill creation","desc":"- Configuration of the vendor bill creation flow from purchase orders and receip","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":182,"wi":"Billing","domain":"Purchasing","feature":"Price differences","desc":"- Configuration of the handling of price differences between purchase orders and","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":183,"wi":"Billing","domain":"Purchasing","feature":"Landed costs","desc":"- Configuration of the landed costs module in Odoo to distribute additional purc","cat":"Gap","moscow":"No need","scope":"Out of Scope"},{"id":184,"wi":"Billing","domain":"Purchasing","feature":"Vendor returns","desc":"- Configuration of the vendor return flow in Odoo for sending goods back to a su","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":185,"wi":"Planning","domain":"Purchasing","feature":"Make- to- order","desc":"- Configuration of the make- to- order procurement route in Odoo where a purchas","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":186,"wi":"Planning","domain":"Purchasing","feature":"Purchase from MRP","desc":"- Configuration of the integration between the MRP module and purchasing in Odoo","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":187,"wi":"Reporting","domain":"Purchasing","feature":"Supplier performance","desc":"- Configuration of supplier performance reporting in Odoo to track on- time deli","cat":"Fit","moscow":"Define need","scope":""},{"id":188,"wi":"Reporting","domain":"Purchasing","feature":"Open purchase orders","desc":"- Configuration of the open purchase orders report in Odoo to give purchasing an","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":189,"wi":"Core Setup","domain":"Sales","feature":"Pricelists","desc":"- Configuration of sales pricelists in Odoo to manage customer- specific pricing","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":190,"wi":"Core Setup","domain":"Sales","feature":"Discounts","desc":"- Configuration of discount management in Odoo for sales orders and quotations, ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":191,"wi":"Core Setup","domain":"Sales","feature":"Sales teams","desc":"- Configuration of sales teams in Odoo to group salespeople by region, product l","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":192,"wi":"Core Setup","domain":"Sales","feature":"Payment terms","desc":"- Configuration of payment terms in Odoo for sales transactions, including stand","cat":"Fit","moscow":"Could have","scope":"Out of Scope"},{"id":193,"wi":"Quotation","domain":"Sales","feature":"Quotation creation","desc":"- Setup of the quotation creation flow in Odoo including standard quotation layo","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":194,"wi":"Quotation","domain":"Sales","feature":"Quotation templates","desc":"- Configuration of quotation templates in Odoo for recurring sales scenarios_x00","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":195,"wi":"Quotation","domain":"Sales","feature":"Product configurator","desc":"- Configuration of the product configurator in Odoo to guide salespeople through","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":196,"wi":"Quotation","domain":"Sales","feature":"Approval workflows","desc":"- Configuration of quotation approval workflows in Odoo for quotes above a certa","cat":"Gap","moscow":"Define need","scope":"Out of Scope"},{"id":197,"wi":"Quotation","domain":"Sales","feature":"eSignature","desc":"- Configuration of the eSignature functionality in Odoo to allow customers to di","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":198,"wi":"Orders","domain":"Sales","feature":"Sales order confirmation","desc":"- Configuration of the sales order confirmation flow in Odoo, including stock re","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":199,"wi":"Orders","domain":"Sales","feature":"Zero lines","desc":"- Configuration of zero- value lines on sales orders for non- billable items or ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":200,"wi":"Orders","domain":"Sales","feature":"Order modifications","desc":"- Configuration of the flow for modifying confirmed sales orders in Odoo, includ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":201,"wi":"Orders","domain":"Sales","feature":"Order cancellations","desc":"- Configuration of the sales order cancellation flow in Odoo, including stock de","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":202,"wi":"Fulfilment","domain":"Sales","feature":"Delivery orders","desc":"- Configuration of the delivery order flow from confirmed sales orders in Odoo_x","cat":"Fit","moscow":"Define need","scope":""},{"id":203,"wi":"Fulfilment","domain":"Sales","feature":"Partial deliveries","desc":"- Configuration of the partial delivery flow in Odoo for situations where not al","cat":"Fit","moscow":"Define need","scope":""},{"id":204,"wi":"Fulfilment","domain":"Sales","feature":"Backorders","desc":"- Configuration of the backorder flow in Odoo for sales orders where delivery is","cat":"Fit","moscow":"Define need","scope":""},{"id":205,"wi":"Fulfilment","domain":"Sales","feature":"Drop- shipping","desc":"- Configuration of the drop- shipping fulfilment route in Odoo where goods are s","cat":"Fit","moscow":"Define need","scope":""},{"id":206,"wi":"Fulfilment","domain":"Sales","feature":"Shipping integration","desc":"- Configuration of carrier integration in Odoo for generating shipping labels, t","cat":"Fit","moscow":"Define need","scope":""},{"id":207,"wi":"Invoicing","domain":"Sales","feature":"Invoice creation","desc":"- Configuration of the customer invoice creation flow from sales orders and deli","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":208,"wi":"Invoicing","domain":"Sales","feature":"Invoice policy","desc":"- Configuration of invoice policies in Odoo to define when a customer is invoice","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":209,"wi":"Invoicing","domain":"Sales","feature":"Down payments","desc":"- Configuration of the down payment flow in Odoo to collect partial payment from","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":210,"wi":"Invoicing","domain":"Sales","feature":"Credit notes","desc":"- Configuration of the credit note flow in Odoo for sales returns, billing corre","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":211,"wi":"Invoicing","domain":"Sales","feature":"Subscription billing","desc":"- Configuration of recurring subscription billing in Odoo for products or servic","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":212,"wi":"Commission","domain":"Sales","feature":"Broker's commission","desc":"- Configuration of broker commission tracking in Odoo for third- party intermedi","cat":"Gap","moscow":"Must have","scope":"Out of Scope"},{"id":213,"wi":"Commission","domain":"Sales","feature":"Default commission","desc":"- Configuration of default sales commission rules in Odoo for internal salespeop","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":214,"wi":"Returns","domain":"Sales","feature":"Returns (RMA)","desc":"- Configuration of the return merchandise authorisation flow in Odoo for handlin","cat":"","moscow":"Define need","scope":""},{"id":215,"wi":"Returns","domain":"Sales","feature":"Warranty handling","desc":"- Configuration of the warranty handling flow in Odoo for products returned unde","cat":"","moscow":"Define need","scope":""},{"id":216,"wi":"Reporting","domain":"Sales","feature":"Sales reporting","desc":"- Configuration and use of standard sales reports in Odoo including revenue by s","cat":"","moscow":"Define need","scope":""},{"id":217,"wi":"Reporting","domain":"Sales","feature":"Margin analysis","desc":"- Configuration of margin analysis reporting in Odoo to show the gross margin pe","cat":"","moscow":"Define need","scope":""},{"id":218,"wi":"Reporting","domain":"Sales","feature":"Forecasting","desc":"- Configuration of sales forecasting in Odoo based on pipeline opportunities and","cat":"","moscow":"Define need","scope":""},{"id":219,"wi":"User management","domain":"Users & Security","feature":"List of users","desc":"- Collection and validation of the full list of Odoo users across all entities a","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":220,"wi":"User management","domain":"Users & Security","feature":"Access right per user","desc":"- Configuration of access rights in Odoo per user based on their role and the pr","cat":"Gap","moscow":"Must have","scope":"In Scope"}]
 ;
 const pm = {};
-RAW.forEach(it=>{ pm[it.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:''}; });
+RAW.forEach(it=>{ pm[it.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:'',signoffResponsible:''}; });
 
 const STATUS_LABELS={todo:'To do',progress:'In uitvoering',review:'Review',done:'Afgerond',blocked:'Geblokkeerd'};
 const INTERNAL_STATUS_LABELS={'':"–",'in_analyse':'In analyse','in_ontwikkeling':'In ontwikkeling','klaar_intern':'Klaar intern','wacht_klant':'Wacht op klant','risico':'Risico'};
@@ -939,7 +994,7 @@ function doLogin(){
   currentUser=user;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('appShell').style.display='block';
-  document.getElementById('userChip').textContent=user.name+' · '+(user.role==='pm'?'Project Manager':user.role==='tpx'?'TPX':'Klant');
+  document.getElementById('userChip').textContent=user.name+' · '+(user.role==='admin'?'Admin':user.role==='pm'?'Project Manager':user.role==='tpx'?'TPX':'Klant');
   document.getElementById('appTitle').textContent=config.projectName;
   document.getElementById('appSub').innerHTML='<span class="sync-dot" title="Live sync actief"></span>'+config.clientName+' × TPX · Budget · Planning · Status';
   applyRoleUI();
@@ -960,7 +1015,7 @@ function doLogout(){
 }
 function applyRoleUI(){
   const isTpx=currentUser.role!=='client';
-  const isPM=currentUser.role==='pm';
+  const isPM=currentUser.role==='pm'||currentUser.role==='admin';
   document.querySelectorAll('.tpx-only').forEach(el=>el.style.display=isTpx?'':' none');
   document.querySelectorAll('.pm-only').forEach(el=>el.style.display=isPM?'':'none');
   if(!isTpx){
@@ -1003,6 +1058,10 @@ function getFiltered(){
     if(fClient&&pm[it.id].clientAssignee!==fClient) return false;
     if(search&&!it.feature.toLowerCase().includes(search)&&!it.wi.toLowerCase().includes(search)) return false;
     if(onlyOver&&getBudgetStatus(it.id)!=='over') return false;
+    const fSR=(document.getElementById('fSignoffResp')||{value:''}).value;
+    if(fSR&&pm[it.id].signoffResponsible!==fSR) return false;
+    const exclOut=(document.getElementById('fOutScope')||{checked:false}).checked;
+    if(exclOut&&it.scope==='Out of Scope') return false;
     return true;
   });
 }
@@ -1033,7 +1092,8 @@ function updateStats(){
 
 // ── BUDGET OVERVIEW ───────────────────────────────────────────────────────────
 function updateBudget(){
-  const si=RAW.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip');
+  const exclOut=(document.getElementById('fOutScope')||{checked:false}).checked;
+  const si=RAW.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip'&&(!exclOut||it.scope!=='Out of Scope'));
   let lo=0,hi=0,mid=0,actualCost=0,actualH=0,actualCount=0;
   si.forEach(it=>{
     const rng=getSizeRange(pm[it.id].size);
@@ -1057,6 +1117,16 @@ function updateBudget(){
   if(over>0) cards+=`<div class="b-card"><div class="bl">Over budget</div><div class="bv" style="color:#EF4444">${over}</div><div class="bd">${warn} in gevarenzone</div></div>`;
   cards+=`<div class="b-card"><div class="bl">Ingeschat</div><div class="bv">${si.length}</div><div class="bd">van ${RAW.length} items</div></div>`;
   document.getElementById('budgetGrid').innerHTML=cards;
+  // Show final sign-off/go-live date from milestones
+  const goLive=milestones.find(m=>m.name.toLowerCase().includes('go-live')||m.name.toLowerCase().includes('golive'));
+  const signoffMS=milestones.find(m=>m.name.toLowerCase().includes('sign-off')&&m.name.toLowerCase().includes('requirement'));
+  const el=document.getElementById('finalSignoffDateDisplay');
+  if(el){
+    let parts=[];
+    if(signoffMS?.targetDate) parts.push('Sign-off: '+fmtDateNL(signoffMS.targetDate)+(signoffMS.status==='done'?' ✓':''));
+    if(goLive?.targetDate) parts.push('Go-live: '+fmtDateNL(goLive.targetDate)+(goLive.status==='done'?' ✓':''));
+    el.textContent=parts.join(' · ');
+  }
 }
 
 // ── OVER-BUDGET ALERT ─────────────────────────────────────────────────────────
@@ -1149,6 +1219,8 @@ function renderBudgetItem(it){
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <div class="item-feat" title="${it.feature}">${it.feature}</div>
         ${cdFmt}${rdFmt}
+        ${p.signoffResponsible?`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:#EBF7F2;color:#065F46">👤 \${p.signoffResponsible}</span>`:''}
+        ${signoffs[it.id]?.status==='signed'?`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:#EBF7F2;color:#065F46">✓ \${fmtDateNL(signoffs[it.id].signedAt)}</span>`:''}
         ${isTpx?`<button class="bi-toggle" onclick="toggleBIEdit(${it.id},this)">✎</button>`:''}
       </div>
       <div class="item-meta-row">
@@ -1177,6 +1249,11 @@ function renderBudgetItem(it){
         <div class="date-row">
           <label>Aangemaakt</label><input type="date" class="bi-f-created" value="${p.createdDate||''}">
           <label>Opgelost</label><input type="date" class="bi-f-resolved" value="${p.resolvedDate||''}">
+          <label>Sign-off verantwoordelijke (klant)</label>
+          <select class="wi-f-sr" style="font-size:11px;padding:3px 5px;border:1px solid #BFDBFE;border-radius:5px;background:#fff">
+            <option value="">—</option>
+            ${team.client.map(m=>\`<option value="\${m}" \${p.signoffResponsible===m?'selected':''}>\${m}</option>\`).join('')}
+          </select>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px">
           <button class="bi-save-btn" onclick="saveBIEdit(${it.id},this)">Opslaan</button>
@@ -1327,6 +1404,7 @@ function saveBIEdit(id,btn){
   pm[id].acceptanceCriteria=panel.querySelector('.bi-f-ac').value.trim();
   const cd=panel.querySelector('.bi-f-created');if(cd) pm[id].createdDate=cd.value||'';
   const rd=panel.querySelector('.bi-f-resolved');if(rd) pm[id].resolvedDate=rd.value||'';
+  const sr=panel.querySelector('.wi-f-sr');if(sr) pm[id].signoffResponsible=sr.value||'';
   saveToSupabase(id);
   // sync item def to supabase
   syncWorkItemDefs([it],[]);
@@ -1345,7 +1423,7 @@ function addInlineBudgetItem(domain){
   const newId=Math.max(...RAW.map(r=>r.id),0)+1;
   const newItem={id:newId,wi:'',domain:domain,feature:'Nieuw item',desc:'',cat:'Gap',moscow:'Must have',scope:'In Scope'};
   RAW.push(newItem);
-  pm[newId]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:new Date().toISOString().split('T')[0],resolvedDate:''};
+  pm[newId]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:new Date().toISOString().split('T')[0],resolvedDate:'',signoffResponsible:''};
   renderAll();
   // Open edit panel for new item and scroll to it
   setTimeout(()=>{
@@ -1669,7 +1747,7 @@ function initTsPersonSelect(){
   const sel=document.getElementById('tsPerson');
   if(!sel)return;
   const cur=sel.value;
-  const isPM=currentUser?.role==='pm';
+  const isPM=currentUser?.role==='pm'||currentUser?.role==='admin';
   sel.innerHTML=isPM?'<option value="">Alle consultants</option>':'';
   team.tpx.forEach(m=>{
     const o=document.createElement('option');
@@ -1683,7 +1761,7 @@ function initTsPersonSelect(){
 function renderTimesheet(){
   const{mon}=getWeekRange(tsWeekOffset);
   document.getElementById('tsWeekLabel').textContent=getWeekLabel(tsWeekOffset);
-  const isPM=currentUser?.role==='pm';
+  const isPM=currentUser?.role==='pm'||currentUser?.role==='admin';
   const personFilter=(document.getElementById('tsPerson')||{value:''}).value;
   const todayStr=fmtDate(new Date());
   const dateInp=document.getElementById('tsDate');
@@ -1806,7 +1884,7 @@ async function addTimeEntry(){
 // ── SIGN-OFF ──────────────────────────────────────────────────────────────────
 function renderSignoff(){
   const isTpx=currentUser?.role!=='client';
-  const isPM=currentUser?.role==='pm';
+  const isPM=currentUser?.role==='pm'||currentUser?.role==='admin';
   const today=new Date().toISOString().split('T')[0];
 
   // Stats
@@ -1957,133 +2035,93 @@ function deleteMilestone(id){
 }
 
 // ── PDF EXPORT ────────────────────────────────────────────────────────────────
+let _selectedPDFType='budget';
+
 function openPDFExport(){
+  _selectedPDFType='budget';
+  document.querySelectorAll('.pdf-opt').forEach(el=>el.classList.remove('selected'));
+  const first=document.querySelector('.pdf-opt input[value=budget]');
+  if(first) first.closest('.pdf-opt').classList.add('selected');
+  document.getElementById('pdfModal').classList.add('open');
+}
+function closePDFModal(){ document.getElementById('pdfModal').classList.remove('open'); }
+function selectPDFOpt(el,type){
+  _selectedPDFType=type;
+  document.querySelectorAll('.pdf-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function generatePDFExport(){
+  closePDFModal();
+  if(_selectedPDFType==='timesheet'){ exportTimesheetCSV(); return; }
   const w=window.open('','_blank');
-  const html=buildPDFHtml();
+  const html=_selectedPDFType==='status'?buildStatusPDFHtml():buildBudgetPDFHtml();
   w.document.write(html);
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(),600);
 }
-
-function buildPDFHtml(){
+function exportTimesheetCSV(){
+  const rows=[['Datum','Consultant','Domein','Work item','Uren','Omschrijving']];
+  const sorted=[...timeEntries].sort((a,b)=>a.entry_date.localeCompare(b.entry_date));
+  sorted.forEach(e=>{
+    const it=RAW.find(r=>r.id===e.work_item_id);
+    rows.push([e.entry_date,e.person,it?.domain||'',it?.feature||'',parseFloat(e.hours).toFixed(2),e.description||'']);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download=`${config.projectName.replace(/\s+/g,'_')}_timesheets.csv`;
+  a.click();
+}
+function buildBudgetPDFHtml(){
   const today=new Date().toLocaleDateString('nl-BE');
   const fmt=v=>'€'+Math.round(v).toLocaleString('nl-BE');
-
-  // Budget totals
-  const si=RAW.filter(it=>pm[it.id]?.size&&pm[it.id].size!=='skip');
+  const exclOut=(document.getElementById('fOutScope')||{checked:false}).checked;
+  const si=RAW.filter(it=>pm[it.id]?.size&&pm[it.id].size!=='skip'&&(!exclOut||it.scope!=='Out of Scope'));
   let lo=0,hi=0,mid=0;
-  si.forEach(it=>{
-    const rng=getSizeRange(pm[it.id].size);
-    const r=getItemRate(it.id);
-    lo+=rng[0]*r;hi+=rng[1]*r;mid+=getSizeMid(pm[it.id].size)*r;
-  });
-
-  // Sign-off stats
-  const total=RAW.length;
-  const signed=RAW.filter(it=>signoffs[it.id]?.status==='signed').length;
-  const rejected=RAW.filter(it=>signoffs[it.id]?.status==='rejected').length;
-
-  // Build domain sections for budget
+  si.forEach(it=>{ const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);lo+=rng[0]*r;hi+=rng[1]*r;mid+=getSizeMid(pm[it.id].size)*r; });
+  const msRows=milestones.map(ms=>`<tr><td><strong>${ms.name}</strong></td><td>${ms.targetDate?fmtDateNL(ms.targetDate):'—'}</td><td style="font-weight:600;color:${ms.status==='done'?'#16A34A':ms.status==='in progress'?'#D97706':'#6b7fa3'}">${ms.status==='done'?'✓ Klaar':ms.status==='in progress'?'Loopt':'Open'}</td><td>${ms.note||''}</td></tr>`).join('');
   const domainRows=config.domains.map(dom=>{
-    const items=RAW.filter(it=>it.domain===dom&&pm[it.id]?.size&&pm[it.id].size!=='skip');
+    const items=RAW.filter(it=>it.domain===dom&&pm[it.id]?.size&&pm[it.id].size!=='skip'&&(!exclOut||it.scope!=='Out of Scope'));
     if(!items.length) return '';
-    let domLo=0,domHi=0,domMid=0;
-    items.forEach(it=>{
-      const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);
-      domLo+=rng[0]*r;domHi+=rng[1]*r;domMid+=getSizeMid(pm[it.id].size)*r;
-    });
+    let dlo=0,dhi=0,dmid=0;
+    items.forEach(it=>{const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);dlo+=rng[0]*r;dhi+=rng[1]*r;dmid+=getSizeMid(pm[it.id].size)*r;});
     const rows=items.map(it=>{
       const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);
       const so=signoffs[it.id];
       const soLabel=so?.status==='signed'?'✓':so?.status==='rejected'?'✗':'—';
-      const acText=pm[it.id]?.acceptanceCriteria||'';
-      return `<tr>
-        <td>${it.id}</td>
-        <td><strong>${it.feature}</strong>${acText?`<br><span style="font-size:9px;color:#16A34A">AC: ${acText.substring(0,80)}</span>`:''}</td>
-        <td>${it.cat||'—'}</td>
-        <td>${it.moscow||'—'}</td>
-        <td style="text-align:center">${pm[it.id].size}</td>
-        <td style="text-align:right">${rng[0]}–${rng[1]}u</td>
-        <td style="text-align:right">${fmt(getSizeMid(pm[it.id].size)*r)}</td>
-        <td style="text-align:center;font-weight:600;color:${so?.status==='signed'?'#16A34A':so?.status==='rejected'?'#DC2626':'#6b7fa3'}">${soLabel}</td>
-        ${so?.status!=='pending'?`<td style="font-size:9px">${so.signedBy||''} ${so.signedAt?fmtDateNL(so.signedAt):''}</td>`:'<td></td>'}
-      </tr>`;
+      const soDate=so?.status==='signed'&&so.signedAt?fmtDateNL(so.signedAt):'';
+      const mosStyle=it.moscow==='Must have'?'background:#FEF3E2;color:#D97706':it.moscow==='Should have'?'background:#EBF7F2;color:#0E8A5A':'background:#f0f4fa;color:#6b7fa3';
+      return `<tr><td>${it.id}</td><td><strong>${it.feature}</strong>${pm[it.id].acceptanceCriteria?`<br><span style="font-size:9px;color:#16A34A">AC: ${pm[it.id].acceptanceCriteria.substring(0,70)}</span>`:''}</td><td><span style="padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;${mosStyle}">${it.moscow||'—'}</span></td><td style="text-align:center"><strong>${pm[it.id].size}</strong></td><td style="text-align:right">${rng[0]}–${rng[1]}u</td><td style="text-align:right;font-weight:600">${fmt(getSizeMid(pm[it.id].size)*r)}</td><td style="font-size:10px">${pm[it.id].signoffResponsible||'—'}</td><td style="text-align:center;font-weight:600;color:${so?.status==='signed'?'#16A34A':so?.status==='rejected'?'#DC2626':'#6b7fa3'}">${soLabel}${soDate?`<br><span style="font-size:9px;color:#6b7fa3;font-weight:400">${soDate}</span>`:''}</td></tr>`;
     }).join('');
-    return `<tr style="background:#F4F6FA"><td colspan="9" style="font-weight:700;padding:6px 8px">${dom} — ${items.length} items · ${fmt(domMid)} midden · ${fmt(domLo)}–${fmt(domHi)}</td></tr>${rows}`;
+    return `<tr style="background:#EBF3FF"><td colspan="8" style="font-weight:700;padding:6px 8px;color:#0D1F3C">${dom} — ${items.length} items · ${fmt(dmid)} midden · ${fmt(dlo)}–${fmt(dhi)}</td></tr>${rows}`;
   }).join('');
-
-  // Milestone rows
-  const msRows=milestones.map(ms=>`<tr>
-    <td><strong>${ms.name}</strong></td>
-    <td>${ms.targetDate?fmtDateNL(ms.targetDate):'—'}</td>
-    <td style="font-weight:600;color:${ms.status==='done'?'#16A34A':ms.status==='in progress'?'#D97706':'#6b7fa3'}">${ms.status==='done'?'✓ Klaar':ms.status==='in progress'?'Loopt':'Open'}</td>
-    <td>${ms.note||''}</td>
-  </tr>`).join('');
-
-  // Sign-off summary by domain
-  const soSummaryRows=config.domains.map(dom=>{
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${config.projectName} — Budget</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:20px}h1{font-size:20px;color:#0D1F3C;margin-bottom:4px}h2{font-size:14px;color:#0D1F3C;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #0D1F3C}.meta{font-size:11px;color:#6b7fa3;margin-bottom:14px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.sc{background:#F4F6FA;border-radius:6px;padding:8px 10px}.sc .v{font-size:20px;font-weight:700;color:#0D1F3C}.sc .l{font-size:10px;color:#6b7fa3}table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#0D1F3C;color:#fff;padding:5px 8px;text-align:left;font-size:10px}td{padding:4px 8px;border-bottom:1px solid #e0e8f5;vertical-align:top}tr:nth-child(even) td{background:#FAFAFA}.footer{margin-top:16px;font-size:10px;color:#6b7fa3;border-top:1px solid #e0e8f5;padding-top:8px}@media print{body{padding:10px}@page{margin:15mm;size:A4}}</style></head><body><h1>${config.projectName}</h1><div class="meta">Budget rapport · ${today} · ${config.clientName} × TPX${exclOut?' · excl. Out of Scope':''}</div><div class="summary"><div class="sc"><div class="l">Ingeschat</div><div class="v">${si.length}<span style="font-size:13px;color:#6b7fa3"> / ${RAW.length}</span></div></div><div class="sc"><div class="l">Laag</div><div class="v" style="font-size:16px">${fmt(lo)}</div></div><div class="sc"><div class="l">Midden</div><div class="v" style="font-size:16px;color:#1E6FD9">${fmt(mid)}</div></div><div class="sc"><div class="l">Hoog</div><div class="v" style="font-size:16px">${fmt(hi)}</div></div></div><h2>Mijlpalen</h2><table><thead><tr><th>Mijlpaal</th><th>Streefdatum</th><th>Status</th><th>Notitie</th></tr></thead><tbody>${msRows}</tbody></table><h2>Budget per domein</h2><table><thead><tr><th>#</th><th>Feature</th><th>Prioriteit</th><th>Size</th><th style="text-align:right">Uren</th><th style="text-align:right">Budget</th><th>Sign-off verantw.</th><th style="text-align:center">Sign-off</th></tr></thead><tbody>${domainRows}</tbody></table><div class="footer">${config.projectName} · ${today}${currentUser?' · '+currentUser.name:''}</div></body></html>`;
+}
+function buildStatusPDFHtml(){
+  const today=new Date().toLocaleDateString('nl-BE');
+  const fmt=v=>'€'+Math.round(v).toLocaleString('nl-BE');
+  const total=RAW.length;
+  const counts={todo:0,progress:0,review:0,done:0,blocked:0};
+  RAW.forEach(it=>{const s=pm[it.id].status||'todo';counts[s]=(counts[s]||0)+1;});
+  const pctDone=Math.round(counts.done/total*100);
+  const signed=RAW.filter(it=>signoffs[it.id]?.status==='signed').length;
+  const domainBlocks=config.domains.map(dom=>{
     const items=RAW.filter(it=>it.domain===dom);
     if(!items.length) return '';
-    const s=items.filter(it=>signoffs[it.id]?.status==='signed').length;
-    const r=items.filter(it=>signoffs[it.id]?.status==='rejected').length;
-    const p=items.length-s-r;
-    return `<tr><td>${dom}</td><td style="text-align:center;color:#16A34A">${s}</td><td style="text-align:center;color:#DC2626">${r}</td><td style="text-align:center;color:#6b7fa3">${p}</td><td style="text-align:center">${items.length}</td></tr>`;
+    const dc={todo:0,progress:0,review:0,done:0,blocked:0};
+    items.forEach(it=>{const s=pm[it.id].status||'todo';dc[s]=(dc[s]||0)+1;});
+    const pct=Math.round(dc.done/items.length*100);
+    const overItems=items.filter(it=>getBudgetStatus(it.id)==='over');
+    const blockedItems=items.filter(it=>pm[it.id].status==='blocked');
+    const atRisk=[...new Set([...overItems,...blockedItems])];
+    const barHtml=`<div style="height:14px;background:#e0e8f5;border-radius:4px;overflow:hidden;display:flex;margin:4px 0 6px"><div style="width:${Math.round(dc.done/items.length*100)}%;background:#10B981"></div><div style="width:${Math.round(dc.review/items.length*100)}%;background:#1E6FD9"></div><div style="width:${Math.round(dc.progress/items.length*100)}%;background:#F59E0B"></div><div style="width:${Math.round(dc.blocked/items.length*100)}%;background:#EF4444"></div></div>`;
+    const atRiskHtml=atRisk.length?`<div style="margin-top:4px"><strong style="font-size:10px;color:#EF4444">⚠ At risk:</strong> ${atRisk.slice(0,5).map(it=>`<span style="font-size:10px;color:#991B1B">${it.feature}${getBudgetStatus(it.id)==='over'?' (over budget)':''}${pm[it.id].status==='blocked'?' (geblokkeerd)':''}</span>`).join(' · ')}${atRisk.length>5?` +${atRisk.length-5} meer`:''}</div>`:'';
+    return `<div style="margin-bottom:14px;padding:10px;background:#f8fafc;border-radius:6px;border-left:4px solid ${pct>=80?'#10B981':pct>=40?'#F59E0B':'#e0e8f5'}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px"><strong style="font-size:12px">${dom}</strong><span style="font-size:11px;color:#6b7fa3">${dc.done}/${items.length} · <strong style="color:${pct>=80?'#16A34A':pct>=40?'#D97706':'#6b7fa3'}">${pct}%</strong></span></div>${barHtml}<div style="display:flex;gap:10px;font-size:10px;color:#6b7fa3"><span>✓ ${dc.done}</span><span>⟳ ${dc.progress}</span><span>👁 ${dc.review}</span>${dc.blocked?`<span style="color:#EF4444;font-weight:600">⚠ ${dc.blocked} geblokkeerd</span>`:''} ${overItems.length?`<span style="color:#EF4444;font-weight:600">💸 ${overItems.length} over budget</span>`:''}</div>${atRiskHtml}</div>`;
   }).join('');
-
-  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
-  <title>${config.projectName} — Sign-off & Budget rapport</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a2e;padding:20px}
-    h1{font-size:20px;color:#0D1F3C;margin-bottom:4px}
-    h2{font-size:14px;color:#0D1F3C;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #0D1F3C}
-    h3{font-size:12px;color:#6b7fa3;margin:12px 0 6px}
-    .meta{font-size:11px;color:#6b7fa3;margin-bottom:16px}
-    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-    .s-card{background:#F4F6FA;border-radius:6px;padding:10px 12px}
-    .s-card .v{font-size:22px;font-weight:700;color:#0D1F3C}
-    .s-card .l{font-size:10px;color:#6b7fa3;margin-bottom:2px}
-    table{width:100%;border-collapse:collapse;margin-bottom:12px}
-    th{background:#0D1F3C;color:#fff;padding:5px 8px;text-align:left;font-size:10px}
-    td{padding:4px 8px;border-bottom:1px solid #e0e8f5;vertical-align:top}
-    tr:nth-child(even) td{background:#FAFAFA}
-    .badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600}
-    .badge-gap{background:#EBF7F2;color:#0E8A5A}
-    .badge-fit{background:#E6F1FB;color:#185FA5}
-    .footer{margin-top:20px;font-size:10px;color:#6b7fa3;border-top:1px solid #e0e8f5;padding-top:8px}
-    @media print{body{padding:10px}@page{margin:15mm;size:A4}}
-  </style></head><body>
-  <h1>${config.projectName}</h1>
-  <div class="meta">Sign-off & Budget rapport · Gegenereerd op ${today} · ${config.clientName} × TPX</div>
-
-  <h2>Mijlpalen</h2>
-  <table><thead><tr><th>Mijlpaal</th><th>Streefdatum</th><th>Status</th><th>Notitie</th></tr></thead>
-  <tbody>${msRows}</tbody></table>
-
-  <h2>Budget samenvatting</h2>
-  <div class="summary-grid">
-    <div class="s-card"><div class="l">Ingeschat (items)</div><div class="v">${si.length}<span style="font-size:14px;color:#6b7fa3"> / ${total}</span></div></div>
-    <div class="s-card"><div class="l">Budget laag</div><div class="v" style="font-size:16px">${fmt(lo)}</div></div>
-    <div class="s-card"><div class="l">Budget midden</div><div class="v" style="font-size:16px;color:#1E6FD9">${fmt(mid)}</div></div>
-    <div class="s-card"><div class="l">Budget hoog</div><div class="v" style="font-size:16px">${fmt(hi)}</div></div>
-  </div>
-
-  <h2>Sign-off overzicht per domein</h2>
-  <table><thead><tr><th>Domein</th><th style="text-align:center">Aanvaard</th><th style="text-align:center">Afgekeurd</th><th style="text-align:center">Open</th><th style="text-align:center">Totaal</th></tr></thead>
-  <tbody>${soSummaryRows}</tbody></table>
-  <p style="font-size:11px;margin-bottom:16px"><strong>Totaal: ${signed}/${total} aanvaard (${Math.round(signed/total*100)||0}%) · ${rejected} afgekeurd · ${total-signed-rejected} open</strong></p>
-
-  <h2>Detail per domein — Budget &amp; Sign-off</h2>
-  <table><thead><tr><th>#</th><th>Feature</th><th>Cat</th><th>MoSCoW</th><th>Size</th><th style="text-align:right">Uren</th><th style="text-align:right">Budget</th><th style="text-align:center">SO</th><th>Door / Datum</th></tr></thead>
-  <tbody>${domainRows}</tbody></table>
-
-  <div class="footer">
-    ${config.projectName} · ${config.clientName} × TPX · Rapport gegenereerd ${today}
-    ${currentUser?` · Opgemaakt door ${currentUser.name}`:''}
-  </div>
-  </body></html>`;
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>${config.projectName} — Status</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a2e;padding:20px}h1{font-size:20px;color:#0D1F3C;margin-bottom:4px}h2{font-size:14px;color:#0D1F3C;margin:18px 0 10px;padding-bottom:4px;border-bottom:2px solid #0D1F3C}.meta{font-size:11px;color:#6b7fa3;margin-bottom:14px}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}.kpi{background:#F4F6FA;border-radius:6px;padding:8px 10px;text-align:center}.kpi .v{font-size:22px;font-weight:700;color:#0D1F3C}.kpi .l{font-size:10px;color:#6b7fa3}.footer{margin-top:16px;font-size:10px;color:#6b7fa3;border-top:1px solid #e0e8f5;padding-top:8px}@media print{body{padding:10px}@page{margin:15mm;size:A4}}</style></head><body><h1>${config.projectName}</h1><div class="meta">Project status · ${today} · ${config.clientName} × TPX</div><div class="kpis"><div class="kpi"><div class="l">Afgerond</div><div class="v" style="color:#10B981">${counts.done}</div></div><div class="kpi"><div class="l">In uitvoering</div><div class="v" style="color:#F59E0B">${counts.progress}</div></div><div class="kpi"><div class="l">Geblokkeerd</div><div class="v" style="color:#EF4444">${counts.blocked}</div></div><div class="kpi"><div class="l">Sign-off</div><div class="v" style="color:#1E6FD9">${signed}/${total}</div></div><div class="kpi"><div class="l">Voortgang</div><div class="v">${pctDone}%</div></div></div><div style="height:20px;background:#e0e8f5;border-radius:6px;overflow:hidden;display:flex;margin-bottom:6px"><div style="width:${Math.round(counts.done/total*100)}%;background:#10B981"></div><div style="width:${Math.round(counts.review/total*100)}%;background:#1E6FD9"></div><div style="width:${Math.round(counts.progress/total*100)}%;background:#F59E0B"></div><div style="width:${Math.round(counts.blocked/total*100)}%;background:#EF4444"></div></div><div style="display:flex;gap:12px;font-size:10px;color:#6b7fa3;margin-bottom:16px"><span style="color:#10B981">■ Afgerond</span><span style="color:#1E6FD9">■ Review</span><span style="color:#F59E0B">■ Actief</span><span style="color:#EF4444">■ Geblokkeerd</span></div><h2>Voortgang per domein</h2>${domainBlocks}<div class="footer">${config.projectName} · ${today}${currentUser?' · '+currentUser.name:''}</div></body></html>`;
 }
+
 
 // ── WORK ITEM EDITOR ─────────────────────────────────────────────────────────
 let wiDraft=[];      // working copy while modal is open
@@ -2123,6 +2161,7 @@ function saveWIEditor(){
     wiDraft[idx].acceptanceCriteria = row.querySelector('.wi-f-ac').value.trim();
     const cdEl=row.querySelector('.wi-f-created'); if(cdEl) wiDraft[idx].createdDate=cdEl.value||'';
     const rdEl=row.querySelector('.wi-f-resolved'); if(rdEl) wiDraft[idx].resolvedDate=rdEl.value||'';
+    const srEl=row.querySelector('.wi-f-sr'); if(srEl) wiDraft[idx].signoffResponsible=srEl.value||'';
   });
 
   // Track deleted ids for Supabase
@@ -2135,7 +2174,7 @@ function saveWIEditor(){
     if(idx>=0){ RAW[idx]=item; }
     else {
       RAW.push(item);
-      pm[item.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:''};
+      pm[item.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:'',signoffResponsible:''};
     }
   });
   for(let i=RAW.length-1;i>=0;i--){ if(!draftIds.has(RAW[i].id)) RAW.splice(i,1); }
@@ -2312,10 +2351,25 @@ function initFilters(){
   document.getElementById('fTPX').onchange=e=>{fTPX=e.target.value;renderAll();};
   document.getElementById('fClient').onchange=e=>{fClient=e.target.value;renderAll();};
   updateAssigneeFilters();
+  initSignoffRespFilter();
   initTsItemSelect();
   initTsPersonSelect();
 }
 
+
+function initSignoffRespFilter(){
+  const sel=document.getElementById('fSignoffResp');
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Alle</option>';
+  team.client.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m;o.textContent=m;
+    if(m===cur) o.selected=true;
+    sel.appendChild(o);
+  });
+  sel.onchange=e=>renderAll();
+}
 
 function showLoading(on){
   document.getElementById('loadingOverlay').classList.toggle('hidden',!on);
