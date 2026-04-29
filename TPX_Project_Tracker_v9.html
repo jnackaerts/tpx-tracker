@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPX — Project Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F6FA;color:#1a1a2e;font-size:14px}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:#0D1F3C;display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:#fff;border-radius:14px;padding:36px 40px;width:380px;max-width:95vw}
+.login-logo{font-size:13px;font-weight:700;color:#1E6FD9;letter-spacing:3px;margin-bottom:6px}
+.login-title{font-size:22px;font-weight:700;color:#0D1F3C;margin-bottom:4px}
+.login-sub{font-size:13px;color:#6b7fa3;margin-bottom:28px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:12px;font-weight:600;color:#6b7fa3;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.login-field input{width:100%;padding:11px 14px;border:1.5px solid #e0e8f5;border-radius:8px;font-size:14px;transition:border .15s}
+.login-field input:focus{outline:none;border-color:#1E6FD9}
+.login-btn{width:100%;padding:12px;background:#1E6FD9;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+.login-btn:hover{opacity:.88}
+.login-error{font-size:12px;color:#EF4444;margin-top:10px;min-height:18px;text-align:center}
+.login-footer{font-size:11px;color:#b0bbc8;text-align:center;margin-top:20px}
+
+/* APP */
+.app{max-width:1200px;margin:0 auto;padding:24px 16px}
+.header{background:#0D1F3C;color:#fff;padding:18px 24px;border-radius:10px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:18px;font-weight:600}
+.header .sub{font-size:12px;opacity:.55;margin-top:3px}
+.hdr-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hbtn{font-size:12px;padding:6px 14px;border:1px solid rgba(255,255,255,.3);border-radius:6px;cursor:pointer;background:rgba(255,255,255,.08);color:#fff;white-space:nowrap}
+.hbtn:hover{background:rgba(255,255,255,.18)}
+.hbtn.primary{background:#1E6FD9;border-color:#1E6FD9}
+.hbtn.pm-badge{background:rgba(255,193,7,.15);border-color:rgba(255,193,7,.5);color:#ffd54f}
+.user-chip{font-size:12px;color:rgba(255,255,255,.65);padding:5px 12px;border:1px solid rgba(255,255,255,.2);border-radius:20px;white-space:nowrap}
+
+/* TABS */
+.tabs{display:flex;margin-bottom:20px;border-bottom:2px solid #e0e8f5;overflow-x:auto}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;color:#6b7fa3;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tab:hover{color:#0D1F3C}
+.tab.active{color:#1E6FD9;border-bottom-color:#1E6FD9}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e0e8f5}
+.stat .s-label{font-size:11px;color:#6b7fa3;margin-bottom:4px}
+.stat .s-val{font-size:20px;font-weight:600;color:#0D1F3C}
+.stat .s-sub{font-size:11px;color:#6b7fa3;margin-top:2px}
+
+/* CONTROLS */
+.controls{background:#fff;border:1px solid #e0e8f5;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.controls select,.controls input[type=number],.controls input[type=text]{font-size:12px;padding:5px 8px;border:1px solid #d0dce8;border-radius:6px;background:#fff;color:#1a1a2e}
+.controls input[type=number]{width:72px}
+.controls input[type=text]{width:160px}
+.controls label{font-size:12px;color:#6b7fa3}
+
+/* BUDGET BOX */
+.budget-box{background:#fff;border:1px solid #e0e8f5;border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.budget-box .bt{font-size:13px;font-weight:600;color:#0D1F3C;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.b-card{background:#F4F6FA;border-radius:6px;padding:10px 12px}
+.b-card .bl{font-size:11px;color:#6b7fa3}
+.b-card .bv{font-size:16px;font-weight:600;color:#0D1F3C}
+.b-card .bd{font-size:11px;color:#6b7fa3;margin-top:2px}
+
+/* PROGRESS */
+.prog-wrap{background:#e0e8f5;border-radius:3px;height:5px;margin-bottom:16px;overflow:hidden}
+.prog-fill{height:100%;background:#1E6FD9;border-radius:3px;transition:width .3s}
+
+/* DOMAIN BLOCKS */
+.domain-block{margin-bottom:10px}
+.domain-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff;border:1px solid #e0e8f5;border-radius:8px;cursor:pointer;user-select:none}
+.domain-header:hover{background:#f8fafc}
+.dh-left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#0D1F3C}
+.dh-arrow{font-size:10px;color:#6b7fa3;transition:transform .2s;display:inline-block}
+.dh-arrow.open{transform:rotate(180deg)}
+.dh-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dh-meta{font-size:11px;color:#6b7fa3}
+.bulk-btns{display:flex;gap:3px}
+.bbtn{font-size:11px;padding:3px 8px;border:1px solid #d0dce8;border-radius:5px;cursor:pointer;background:#fff;color:#6b7fa3}
+.bbtn:hover{background:#f0f4fa}
+.items-list{display:none;flex-direction:column;gap:3px;margin-top:5px}
+.items-list.open{display:flex}
+
+/* ITEM ROWS */
+.item-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border:1px solid #e8eef5;border-radius:7px;flex-wrap:wrap}
+.item-row:hover{border-color:#b0c4de}
+.item-info{flex:1;min-width:200px}
+.item-feat{font-size:12px;font-weight:600;color:#0D1F3C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-meta-row{display:flex;gap:5px;margin-top:3px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+.bg{background:#EBF7F2;color:#0E8A5A}.bf{background:#E6F1FB;color:#185FA5}
+.bm{background:#FEF3E2;color:#D97706}.bs{background:#EBF7F2;color:#0E8A5A}.bn{background:#f0f4fa;color:#6b7fa3}
+.item-desc{font-size:10px;color:#8a9dbb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+.size-btns{display:flex;gap:3px;flex-shrink:0}
+.sbtn{padding:3px 7px;font-size:11px;font-weight:600;border:1px solid #d0dce8;border-radius:5px;cursor:pointer;background:#f8fafc;color:#8a9dbb}
+.sbtn:hover{border-color:#7a9cc4;color:#0D1F3C}
+.sbtn.aXS{background:#E6F1FB;color:#185FA5;border-color:#185FA5}
+.sbtn.aS{background:#EAF3DE;color:#3B6D11;border-color:#3B6D11}
+.sbtn.aM{background:#FAEEDA;color:#854F0B;border-color:#854F0B}
+.sbtn.aL{background:#FAECE7;color:#993C1D;border-color:#993C1D}
+.sbtn.aXL{background:#FCEBEB;color:#A32D2D;border-color:#A32D2D}
+.sbtn.askip{background:#f0f4fa;color:#b0b8c8;border-color:#d0dce8}
+.actual-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.actual-wrap label{font-size:10px;color:#6b7fa3;white-space:nowrap}
+.actual-input{width:52px;font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:5px;text-align:right}
+.budget-pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.bp-ok{background:#EBF7F2;color:#0E8A5A}.bp-warn{background:#FEF3E2;color:#D97706}
+.bp-over{background:#FCEBEB;color:#A32D2D}.bp-none{background:#f0f4fa;color:#8a9dbb}
+
+/* PM ROW */
+.pm-header-row{display:grid;gap:8px;padding:6px 12px;font-size:10px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.5px}
+.pm-row{display:grid;gap:8px;align-items:center;padding:8px 12px;background:#fff;border:1px solid #e8eef5;border-radius:7px}
+.pm-row:hover{border-color:#b0c4de}
+.pm-select{font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:5px;background:#fff;color:#1a1a2e;width:100%}
+.pm-actual{width:100%;font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:5px;text-align:right}
+.pm-actual.over{border-color:#EF4444;background:#FEF2F2;color:#A32D2D}
+.pm-actual.warn{border-color:#F59E0B;background:#FFFBEB}
+
+/* STATUS */
+.sp-todo{background:#f0f4fa;color:#6b7fa3}.sp-progress{background:#FEF3E2;color:#D97706}
+.sp-review{background:#E6F1FB;color:#185FA5}.sp-done{background:#EBF7F2;color:#0E8A5A}
+.sp-blocked{background:#FCEBEB;color:#A32D2D}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.st-todo .dot{background:#d0dce8}.st-progress .dot{background:#F59E0B}
+.st-review .dot{background:#1E6FD9}.st-done .dot{background:#10B981}.st-blocked .dot{background:#EF4444}
+.status-legend{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.sl-dot{display:inline-flex;align-items:center;gap:4px;font-size:12px}
+
+/* ALERT */
+.alert-bar{background:#FCEBEB;border:1px solid #f5c6c6;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.alert-bar .ab-title{font-size:13px;font-weight:600;color:#A32D2D}
+.alert-bar .ab-sub{font-size:11px;color:#C0392B;margin-top:2px}
+.alert-bar .ab-count{font-size:22px;font-weight:700;color:#A32D2D;flex-shrink:0}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(13,31,60,.6);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:680px;max-width:100%}
+.modal h2{font-size:16px;font-weight:700;color:#0D1F3C;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #e0e8f5}
+.modal-section{margin-bottom:24px}
+.modal-section h3{font-size:12px;font-weight:700;color:#6b7fa3;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:16px;border-top:1px solid #e0e8f5;margin-top:8px}
+.mabtn{padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid #d0dce8;background:#f8fafc;color:#1a1a2e}
+.mabtn.save{background:#1E6FD9;border-color:#1E6FD9;color:#fff}
+.mabtn:hover{opacity:.85}
+
+/* CONFIG GRID */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cfg-field{display:flex;flex-direction:column;gap:4px}
+.cfg-field label{font-size:11px;font-weight:600;color:#6b7fa3}
+.cfg-field input,.cfg-field select{padding:7px 10px;border:1px solid #d0dce8;border-radius:6px;font-size:13px;color:#1a1a2e;background:#fff}
+.cfg-field input:focus,.cfg-field select:focus{outline:none;border-color:#1E6FD9}
+.cfg-field.full{grid-column:1/-1}
+
+/* SIZE CONFIG TABLE */
+.size-table{width:100%;border-collapse:collapse}
+.size-table th{font-size:11px;font-weight:600;color:#6b7fa3;text-align:left;padding:6px 8px;border-bottom:1px solid #e0e8f5}
+.size-table td{padding:5px 8px;border-bottom:1px solid #f0f4fa}
+.size-table input{width:64px;padding:4px 6px;border:1px solid #d0dce8;border-radius:5px;font-size:12px;text-align:right}
+.size-table .s-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700}
+
+/* RATE TABLE */
+.rate-table{width:100%;border-collapse:collapse}
+.rate-table th{font-size:11px;font-weight:600;color:#6b7fa3;text-align:left;padding:6px 8px;border-bottom:1px solid #e0e8f5}
+.rate-table td{padding:5px 8px;border-bottom:1px solid #f0f4fa;font-size:12px}
+.rate-table input{width:80px;padding:4px 6px;border:1px solid #d0dce8;border-radius:5px;font-size:12px;text-align:right}
+.rate-table select{padding:4px 6px;border:1px solid #d0dce8;border-radius:5px;font-size:12px}
+
+/* USER TABLE */
+.user-table{width:100%;border-collapse:collapse}
+.user-table th{font-size:11px;font-weight:600;color:#6b7fa3;text-align:left;padding:6px 8px;border-bottom:1px solid #e0e8f5}
+.user-table td{padding:6px 8px;border-bottom:1px solid #f0f4fa;font-size:12px}
+.user-table input,.user-table select{padding:4px 6px;border:1px solid #d0dce8;border-radius:5px;font-size:12px;width:100%}
+.role-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.rp-pm{background:#FEF3E2;color:#D97706}
+.rp-tpx{background:#E6F1FB;color:#185FA5}
+.rp-client{background:#EBF7F2;color:#0E8A5A}
+.add-row-btn{font-size:12px;padding:6px 12px;border:1px dashed #d0dce8;border-radius:6px;cursor:pointer;background:#f8fafc;color:#6b7fa3;width:100%;margin-top:6px}
+.add-row-btn:hover{background:#f0f4fa;border-color:#b0c4de}
+.del-btn{cursor:pointer;color:#EF4444;font-size:16px;font-weight:600;border:none;background:none;padding:0 4px;line-height:1}
+
+/* DOMAIN TAGS */
+.domain-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.domain-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#E6F1FB;color:#185FA5;border-radius:20px;font-size:12px;font-weight:500}
+.domain-tag .dtdel{cursor:pointer;font-weight:700;color:#185FA5;font-size:14px;line-height:1}
+.domain-add-row{display:flex;gap:6px}
+.domain-add-row input{flex:1;padding:6px 10px;border:1px solid #d0dce8;border-radius:6px;font-size:12px}
+.domain-add-row button{padding:6px 12px;border:1px solid #1E6FD9;border-radius:6px;background:#1E6FD9;color:#fff;font-size:12px;cursor:pointer}
+
+.section-hidden{display:none}
+.no-items{font-size:12px;color:#8a9dbb;padding:12px 0;font-style:italic}
+
+/* SIGN-OFF */
+.so-section{background:#fff;border:1px solid #e0e8f5;border-radius:8px;margin-bottom:14px;overflow:hidden}
+.so-section-head{padding:12px 16px;background:#F4F6FA;border-bottom:1px solid #e0e8f5;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.so-section-title{font-size:13px;font-weight:600;color:#0D1F3C}
+.so-milestone-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;padding:14px 16px}
+.so-milestone{background:#F8FAFC;border:1px solid #e0e8f5;border-radius:8px;padding:12px 14px}
+.so-milestone.done{background:#F0FDF4;border-color:#86EFAC}
+.so-milestone.overdue{background:#FEF2F2;border-color:#FCA5A5}
+.so-milestone-name{font-size:12px;font-weight:600;color:#0D1F3C;margin-bottom:6px}
+.so-milestone input[type=text]{width:100%;font-size:12px;padding:5px 8px;border:1px solid #d0dce8;border-radius:5px;background:#fff;margin-bottom:5px}
+.so-milestone input[type=date]{font-size:11px;padding:4px 6px;border:1px solid #d0dce8;border-radius:5px;background:#fff;color:#1a1a2e}
+.so-milestone input:focus{outline:none;border-color:#1E6FD9}
+.so-ms-status{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.so-ms-btn{font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid #d0dce8;cursor:pointer;background:#fff;color:#6b7fa3}
+.so-ms-btn.active{background:#EBF7F2;border-color:#10B981;color:#065F46;font-weight:600}
+.so-ms-btn.active-warn{background:#FEF3E2;border-color:#F59E0B;color:#92400E;font-weight:600}
+.so-ms-btn.active-over{background:#FEF2F2;border-color:#EF4444;color:#991B1B;font-weight:600}
+.so-add-ms{font-size:12px;padding:7px 12px;border:1px dashed #d0dce8;border-radius:6px;cursor:pointer;background:#f8fafc;color:#6b7fa3;width:100%;text-align:center}
+.so-add-ms:hover{background:#f0f4fa;border-color:#1E6FD9;color:#1E6FD9}
+/* item sign-off table */
+.so-table{width:100%;border-collapse:collapse}
+.so-table th{font-size:10px;font-weight:600;color:#6b7fa3;text-align:left;padding:7px 12px;background:#F4F6FA;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e0e8f5}
+.so-table td{padding:7px 12px;border-bottom:1px solid #f0f4fa;font-size:12px;vertical-align:middle}
+.so-table tr:hover td{background:#fafbfc}
+.so-sign-btn{font-size:11px;padding:3px 10px;border-radius:5px;border:1px solid #d0dce8;cursor:pointer;background:#fff;color:#6b7fa3;white-space:nowrap}
+.so-sign-btn:hover{background:#EBF7F2;border-color:#10B981;color:#065F46}
+.so-sign-btn.signed{background:#EBF7F2;border-color:#10B981;color:#065F46;font-weight:600}
+.so-sign-btn.rejected{background:#FEF2F2;border-color:#EF4444;color:#991B1B;font-weight:600}
+.so-remark{font-size:11px;padding:3px 6px;border:1px solid #e0e8f5;border-radius:4px;background:#fff;width:100%;color:#1a1a2e}
+.so-remark:focus{outline:none;border-color:#1E6FD9}
+.so-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.so-pill.signed{background:#EBF7F2;color:#065F46}
+.so-pill.rejected{background:#FEF2F2;color:#991B1B}
+.so-pill.pending{background:#f0f4fa;color:#6b7fa3}
+.so-filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #f0f4fa}
+.so-filter-bar select,.so-filter-bar input{font-size:12px;padding:5px 8px;border:1px solid #d0dce8;border-radius:6px;background:#fff}
+.so-progress-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f0f4fa;flex-wrap:wrap}
+.so-prog{flex:1;min-width:120px;background:#e0e8f5;border-radius:4px;height:8px;overflow:hidden}
+.so-prog-fill{height:100%;background:#10B981;border-radius:4px;transition:width .3s}
+/* PDF button */
+.hbtn.pdf{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6EE7B7}
+.hbtn.pdf:hover{background:rgba(16,185,129,.25)}
+
+/* INTERNAL NOTES PANEL */
+.internal-panel{background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:8px 10px;margin-top:5px;display:none}
+.internal-panel.open{display:block}
+.internal-panel textarea{width:100%;border:1px solid #FCD34D;border-radius:5px;font-size:11px;padding:5px 7px;resize:vertical;min-height:48px;background:#FFFDF0;color:#1a1a2e;font-family:inherit}
+.internal-panel textarea:focus{outline:none;border-color:#F59E0B}
+.int-toggle{font-size:10px;padding:2px 7px;border:1px solid #FCD34D;border-radius:5px;cursor:pointer;background:#FFFBEB;color:#D97706;white-space:nowrap;flex-shrink:0}
+.int-toggle:hover{background:#FEF3E2}
+.int-status-row{display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap}
+.int-status-label{font-size:10px;color:#D97706;font-weight:600;white-space:nowrap}
+.int-status-btn{font-size:10px;padding:2px 7px;border:1px solid #e0e8f5;border-radius:10px;cursor:pointer;background:#fff;color:#6b7fa3}
+.int-status-btn.active{background:#FEF3E2;border-color:#F59E0B;color:#D97706;font-weight:600}
+.int-note-preview{font-size:10px;color:#D97706;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+
+/* ESTIMATE vs ACTUAL */
+.est-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.est-wrap label{font-size:10px;color:#6b7fa3;white-space:nowrap}
+.est-input{width:52px;font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:5px;text-align:right}
+.est-input.est-auto{border-color:#93C5FD;background:#EFF6FF;color:#1D4ED8}
+.dev-pill{display:inline-flex;align-items:center;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:600;white-space:nowrap}
+.dev-ok{background:#EBF7F2;color:#0E8A5A}
+.dev-warn{background:#FEF3E2;color:#D97706}
+.dev-over{background:#FCEBEB;color:#A32D2D}
+
+/* TIMESHEET KALENDER */
+.ts-form{background:#fff;border:1px solid #e0e8f5;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.ts-form h3{font-size:13px;font-weight:600;color:#0D1F3C;margin-bottom:10px}
+.ts-grid{display:grid;grid-template-columns:1fr 1fr 80px 1fr auto;gap:8px;align-items:end}
+.ts-field{display:flex;flex-direction:column;gap:3px}
+.ts-field label{font-size:10px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.4px}
+.ts-field select,.ts-field input{padding:6px 8px;border:1px solid #d0dce8;border-radius:6px;font-size:12px;color:#1a1a2e;background:#fff}
+.ts-field select:focus,.ts-field input:focus{outline:none;border-color:#1E6FD9}
+.ts-add-btn{padding:6px 14px;background:#1E6FD9;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;align-self:end}
+.ts-add-btn:hover{opacity:.88}
+.ts-cal{background:#fff;border:1px solid #e0e8f5;border-radius:8px;overflow:hidden}
+.ts-cal-head{display:grid;grid-template-columns:110px repeat(7,1fr);background:#F4F6FA;border-bottom:1px solid #e0e8f5}
+.ts-cal-head-day{padding:8px 6px;text-align:center;font-size:11px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.4px;border-left:1px solid #e0e8f5}
+.ts-cal-head-day.today{color:#1E6FD9;background:#EFF6FF}
+.ts-cal-head-label{padding:8px 10px;font-size:11px;font-weight:600;color:#6b7fa3;display:flex;align-items:center}
+.ts-cal-person{display:grid;grid-template-columns:110px repeat(7,1fr);border-top:1px solid #e0e8f5}
+.ts-cal-name{padding:8px 10px;font-size:12px;font-weight:600;color:#0D1F3C;display:flex;align-items:flex-start;border-right:1px solid #e0e8f5;background:#FAFBFC}
+.ts-cal-cell{min-height:52px;padding:4px;border-left:1px solid #f0f4fa}
+.ts-cal-cell.today{background:#F0F7FF}
+.ts-cal-cell.weekend{background:#FAFAFA}
+.ts-chip{background:#E6F1FB;color:#185FA5;border-radius:4px;padding:2px 5px;font-size:10px;margin-bottom:2px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:3px;line-height:1.3}
+.ts-chip:hover{background:#BFDBFE}
+.ts-chip .tc-h{font-weight:600;white-space:nowrap}
+.ts-chip .tc-del{color:#93C5FD;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1}
+.ts-chip .tc-del:hover{color:#1D4ED8}
+.ts-chip.mine{background:#EBF7F2;color:#0E8A5A}
+.ts-chip.mine:hover{background:#A7F3D0}
+.ts-chip.mine .tc-del{color:#6EE7B7}
+.ts-chip.mine .tc-del:hover{color:#065F46}
+.ts-cal-add{font-size:10px;color:#b0bbc8;cursor:pointer;padding:2px 4px;border-radius:3px;display:block;text-align:center;margin-top:2px}
+.ts-cal-add:hover{background:#f0f4fa;color:#1E6FD9}
+.ts-cal-total{font-size:10px;font-weight:600;color:#6b7fa3;text-align:right;padding:2px 4px}
+.ts-cal-footer{display:grid;grid-template-columns:110px repeat(7,1fr);border-top:2px solid #e0e8f5;background:#F4F6FA}
+.ts-cal-footer-cell{padding:6px 4px;text-align:center;font-size:11px;font-weight:600;color:#0D1F3C;border-left:1px solid #e0e8f5}
+.ts-cal-footer-label{padding:6px 10px;font-size:11px;font-weight:600;color:#6b7fa3}
+.ts-week-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ts-week-btn{padding:4px 10px;border:1px solid #d0dce8;border-radius:5px;cursor:pointer;background:#fff;font-size:12px;color:#1a1a2e}
+.ts-week-btn:hover{background:#f0f4fa}
+.ts-week-label{font-size:13px;font-weight:600;color:#0D1F3C}
+.ts-inline-form{background:#fff;border:1px solid #93C5FD;border-radius:6px;padding:6px 8px;margin-top:4px;display:none}
+.ts-inline-form.open{display:block}
+.ts-inline-row{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.ts-inline-row input,.ts-inline-row select{font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:4px;background:#fff}
+.ts-inline-btn{font-size:11px;padding:3px 8px;border:none;border-radius:4px;cursor:pointer;font-weight:600}
+.ts-inline-btn.ok{background:#1E6FD9;color:#fff}
+.ts-inline-btn.cancel{background:#f0f4fa;color:#6b7fa3}
+.ts-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+.ts-scard{background:#fff;border:1px solid #e0e8f5;border-radius:8px;padding:10px 12px}
+.ts-scard .sc-name{font-size:11px;color:#6b7fa3;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-scard .sc-h{font-size:18px;font-weight:600;color:#0D1F3C}
+.ts-scard .sc-sub{font-size:10px;color:#6b7fa3;margin-top:2px}
+.ts-list{background:#fff;border:1px solid #e0e8f5;border-radius:8px;overflow:hidden}
+.ts-list-header{display:grid;grid-template-columns:90px 1fr 1fr 60px 1fr 32px;gap:8px;padding:8px 14px;background:#F4F6FA;font-size:10px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.4px}
+.ts-entry{display:grid;grid-template-columns:90px 1fr 1fr 60px 1fr 32px;gap:8px;padding:8px 14px;border-top:1px solid #f0f4fa;font-size:12px;align-items:center}
+.ts-entry:hover{background:#f8fafc}
+.ts-del{cursor:pointer;color:#EF4444;font-size:14px;font-weight:600;border:none;background:none;padding:0;line-height:1}
+.ts-total-row{display:grid;grid-template-columns:90px 1fr 1fr 60px 1fr 32px;gap:8px;padding:8px 14px;border-top:2px solid #e0e8f5;font-size:12px;font-weight:600;color:#0D1F3C;background:#F4F6FA}
+
+/* WORK ITEM EDITOR */
+.wi-modal{background:#fff;border-radius:12px;padding:0;width:960px;max-width:100%;max-height:90vh;display:flex;flex-direction:column}
+.wi-modal-head{padding:20px 24px 16px;border-bottom:1px solid #e0e8f5;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.wi-modal-head h2{font-size:16px;font-weight:700;color:#0D1F3C}
+.wi-modal-body{overflow-y:auto;padding:16px 24px;flex:1}
+.wi-modal-foot{padding:14px 24px;border-top:1px solid #e0e8f5;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.wi-domain-block{margin-bottom:16px}
+.wi-domain-label{font-size:11px;font-weight:700;color:#6b7fa3;text-transform:uppercase;letter-spacing:.6px;padding:6px 0;border-bottom:1px solid #e0e8f5;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.wi-table{width:100%;border-collapse:collapse}
+.wi-table th{font-size:10px;font-weight:600;color:#6b7fa3;text-align:left;padding:5px 6px;background:#F4F6FA;text-transform:uppercase;letter-spacing:.4px}
+.wi-table td{padding:3px 4px;border-bottom:1px solid #f0f4fa;vertical-align:middle}
+.wi-table tr:hover td{background:#f8fafc}
+.wi-input{width:100%;font-size:12px;padding:4px 6px;border:1px solid #e0e8f5;border-radius:5px;color:#1a1a2e;background:#fff}
+.wi-input:focus{outline:none;border-color:#1E6FD9}
+.wi-select{font-size:11px;padding:4px 5px;border:1px solid #e0e8f5;border-radius:5px;background:#fff;color:#1a1a2e;width:100%}
+.wi-select:focus{outline:none;border-color:#1E6FD9}
+.wi-del{cursor:pointer;color:#EF4444;font-size:14px;font-weight:700;border:none;background:none;padding:0 4px;line-height:1;opacity:.5}
+.wi-del:hover{opacity:1}
+.wi-add-inline{font-size:11px;padding:4px 10px;border:1px dashed #d0dce8;border-radius:5px;cursor:pointer;background:#f8fafc;color:#6b7fa3;white-space:nowrap}
+.wi-add-inline:hover{background:#f0f4fa;border-color:#1E6FD9;color:#1E6FD9}
+.wi-new-row td{background:#F0F9FF}
+.wi-new-row .wi-input,.wi-new-row .wi-select{border-color:#93C5FD;background:#F0F9FF}
+.wi-badge-gap{background:#EBF7F2;color:#0E8A5A;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:600}
+.wi-badge-fit{background:#E6F1FB;color:#185FA5;padding:2px 5px;border-radius:3px;font-size:10px;font-weight:600}
+.wi-stats{font-size:11px;color:#6b7fa3;font-weight:400}
+.wi-search{font-size:12px;padding:6px 10px;border:1px solid #d0dce8;border-radius:6px;width:220px}
+.wi-search:focus{outline:none;border-color:#1E6FD9}
+.wi-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.wi-paste-area{width:100%;height:80px;font-size:11px;padding:8px;border:1px dashed #d0dce8;border-radius:6px;resize:vertical;font-family:monospace;color:#1a1a2e;background:#FAFAFA}
+.wi-paste-area:focus{outline:none;border-color:#1E6FD9}
+
+/* INLINE BUDGET EDIT */
+.item-row.editing{background:#FAFEFF;border-color:#93C5FD}
+.bi-edit-panel{background:#F0F7FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 10px;margin-top:6px;display:none}
+.bi-edit-panel.open{display:block}
+.bi-edit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.bi-edit-grid-wide{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.bi-field{display:flex;flex-direction:column;gap:2px}
+.bi-field label{font-size:10px;font-weight:600;color:#6b7fa3;text-transform:uppercase;letter-spacing:.4px}
+.bi-field input,.bi-field select,.bi-field textarea{font-size:11px;padding:4px 6px;border:1px solid #BFDBFE;border-radius:5px;background:#fff;color:#1a1a2e}
+.bi-field textarea{resize:vertical;min-height:48px;font-family:inherit}
+.bi-field input:focus,.bi-field select:focus,.bi-field textarea:focus{outline:none;border-color:#1E6FD9}
+.bi-save-btn{font-size:11px;padding:4px 12px;background:#1E6FD9;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600}
+.bi-save-btn:hover{opacity:.88}
+.bi-cancel-btn{font-size:11px;padding:4px 10px;background:#f0f4fa;color:#6b7fa3;border:1px solid #d0dce8;border-radius:5px;cursor:pointer}
+.bi-cancel-btn:hover{background:#e0e8f5}
+.bi-toggle{font-size:10px;padding:2px 7px;border:1px solid #BFDBFE;border-radius:5px;cursor:pointer;background:#EFF6FF;color:#1E6FD9;white-space:nowrap;flex-shrink:0}
+.bi-toggle:hover{background:#DBEAFE}
+/* Acceptance criteria in PM view */
+.ac-panel{background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:7px 10px;margin-top:5px;display:none}
+.ac-panel.open{display:block}
+.ac-toggle{font-size:10px;padding:2px 7px;border:1px solid #86EFAC;border-radius:5px;cursor:pointer;background:#F0FDF4;color:#16A34A;white-space:nowrap;flex-shrink:0}
+.ac-toggle:hover{background:#DCFCE7}
+.ac-preview{font-size:10px;color:#16A34A;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.ac-panel textarea{width:100%;border:1px solid #86EFAC;border-radius:5px;font-size:11px;padding:5px 7px;resize:vertical;min-height:52px;background:#F7FFF9;color:#1a1a2e;font-family:inherit}
+.ac-panel textarea:focus{outline:none;border-color:#16A34A}
+.date-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.date-row label{font-size:10px;color:#6b7fa3;white-space:nowrap}
+.date-row input[type=date]{font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:5px;background:#fff;color:#1a1a2e}
+
+.loading-overlay{position:fixed;inset:0;background:rgba(13,31,60,.7);z-index:998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#fff}
+.loading-overlay.hidden{display:none}
+.spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10B981;margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">TPX</div>
+    <div class="login-title" id="loginTitle">Project Tracker</div>
+    <div class="login-sub" id="loginSub">Odoo implementatie — beveiligde toegang</div>
+    <div class="login-field">
+      <label>E-mailadres</label>
+      <input type="email" id="loginEmail" placeholder="naam@bedrijf.be" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
+    </div>
+    <div class="login-field">
+      <label>PIN-code</label>
+      <input type="password" id="loginPin" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Inloggen</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-footer" id="loginFooter">Contacteer TPX voor toegang &nbsp;·&nbsp; tpx.eu</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appShell" style="display:none">
+  <div class="header">
+    <div>
+      <h1 id="appTitle">Project Tracker</h1>
+      <div class="sub" id="appSub" style="display:flex;align-items:center;gap:6px"><span class="sync-dot" title="Live verbonden met Supabase"></span>Budget inschatting · Taakverdeling · Statusopvolging</div>
+    </div>
+    <div class="hdr-btns">
+      <span class="user-chip" id="userChip"></span>
+      <button class="hbtn pm-only" id="configBtn" onclick="openConfig()">⚙ Configuratie</button>
+      <button class="hbtn tpx-only" onclick="openUserMgmt()">Gebruikers</button>
+      <button class="hbtn tpx-only" onclick="openWIEditor()">⊞ Work items</button>
+      <button class="hbtn pdf tpx-only" onclick="openPDFExport()">⬇ PDF</button>
+      <button class="hbtn primary" onclick="exportCSV()">Export CSV</button>
+      <button class="hbtn" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <div class="tab active" id="tabBudget" onclick="switchTab('budget',this)">Budget inschatting</div>
+    <div class="tab" id="tabPM" onclick="switchTab('pm',this)">Project management</div>
+    <div class="tab tpx-only" id="tabTS" onclick="switchTab('timesheet',this)">Tijdregistratie</div>
+    <div class="tab" id="tabSO" onclick="switchTab('signoff',this)">Sign-off</div>
+    <div class="tab" id="tabDash" onclick="switchTab('dashboard',this)">Dashboard</div>
+  </div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="controls">
+    <label>Domein</label><select id="fDomain"><option value="">Alle domeinen</option></select>
+    <label>Categorie</label>
+    <select id="fCat"><option value="">Alle</option><option value="Gap">Gap</option><option value="Fit">Fit</option></select>
+    <label>MoSCoW</label>
+    <select id="fMoscow"><option value="">Alle</option><option value="Must have">Must have</option><option value="Should have">Should have</option><option value="Could have">Could have</option><option value="Define need">Define need</option></select>
+    <label>Scope</label>
+    <select id="fScope"><option value="">Alle</option><option value="In Scope">In scope</option><option value="Out of Scope">Out of scope</option></select>
+    <div id="pmControls" style="display:none;gap:10px;align-items:center;flex-wrap:wrap;display:none">
+      <label>Status</label>
+      <select id="fStatus"><option value="">Alle statussen</option><option value="todo">To do</option><option value="progress">In uitvoering</option><option value="review">Review</option><option value="done">Afgerond</option><option value="blocked">Geblokkeerd</option></select>
+      <label>TPX</label><select id="fTPX"><option value="">Alle</option></select>
+      <label>Klant</label><select id="fClient"><option value="">Alle</option></select>
+      <label>Zoeken</label><input type="text" id="fSearch" placeholder="Zoek feature..." oninput="renderAll()">
+      <label><input type="checkbox" id="fOverBudget" onchange="renderAll()"> Over budget</label>
+    </div>
+  </div>
+
+  <div id="budgetSection">
+    <div class="budget-box tpx-only">
+      <div class="bt"><span>Budget overzicht</span><span id="sizedCount" style="font-size:11px;font-weight:400;color:#6b7fa3"></span></div>
+      <div class="budget-grid" id="budgetGrid"></div>
+    </div>
+    <div class="prog-wrap tpx-only"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div id="pmSection" class="section-hidden">
+    <div id="overBudgetAlert" style="display:none"></div>
+    <div class="status-legend">
+      <span style="font-size:11px;color:#6b7fa3">Status:</span>
+      <span class="sl-dot st-todo"><span class="dot"></span>To do</span>
+      <span class="sl-dot st-progress"><span class="dot"></span>In uitvoering</span>
+      <span class="sl-dot st-review"><span class="dot"></span>Review</span>
+      <span class="sl-dot st-done"><span class="dot"></span>Afgerond</span>
+      <span class="sl-dot st-blocked"><span class="dot"></span>Geblokkeerd</span>
+    </div>
+  </div>
+
+  <div id="dashSection" class="section-hidden"><div id="dashContent"></div></div>
+  <div id="soSection" class="section-hidden">
+    <div id="soContent"></div>
+  </div>
+  <div id="tsSection" class="section-hidden">
+    <div class="ts-form">
+      <h3>Uren boeken</h3>
+      <div class="ts-grid">
+        <div class="ts-field">
+          <label>Datum</label>
+          <input type="date" id="tsDate">
+        </div>
+        <div class="ts-field">
+          <label>Work item</label>
+          <select id="tsItem"><option value="">— kies item —</option></select>
+        </div>
+        <div class="ts-field">
+          <label>Uren</label>
+          <input type="number" id="tsHours" min="0.25" max="24" step="0.25" placeholder="0.0">
+        </div>
+        <div class="ts-field">
+          <label>Omschrijving</label>
+          <input type="text" id="tsDesc" placeholder="Wat heb je gedaan?">
+        </div>
+        <button class="ts-add-btn" onclick="addTimeEntry()">+ Boeken</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div class="ts-week-nav">
+        <button class="ts-week-btn" onclick="tsWeekOffset--;renderTimesheet()">&#8249;</button>
+        <span class="ts-week-label" id="tsWeekLabel">Deze week</span>
+        <button class="ts-week-btn" onclick="tsWeekOffset++;renderTimesheet()">&#8250;</button>
+        <button class="ts-week-btn" onclick="tsWeekOffset=0;renderTimesheet()" style="margin-left:4px">Vandaag</button>
+      </div>
+      <select id="tsPerson" style="font-size:12px;padding:5px 8px;border:1px solid #d0dce8;border-radius:6px;background:#fff" onchange="renderTimesheet()">
+        <option value="">Alle consultants</option>
+      </select>
+    </div>
+    <div id="tsContent"></div>
+  </div>
+  <div id="mainContent"></div>
+</div>
+
+<!-- CONFIG MODAL (PM only) -->
+<div class="modal-bg" id="configModal">
+  <div class="modal" style="width:720px">
+    <h2>⚙ Projectconfiguratie — alleen zichtbaar voor Project Manager</h2>
+
+    <div class="modal-section">
+      <h3>Project info</h3>
+      <div class="cfg-grid">
+        <div class="cfg-field"><label>Projectnaam</label><input type="text" id="cfgProjectName" placeholder="Cafimo Odoo Implementatie"></div>
+        <div class="cfg-field"><label>Klantnaam</label><input type="text" id="cfgClientName" placeholder="Cafimo"></div>
+        <div class="cfg-field"><label>Login subtitel</label><input type="text" id="cfgLoginSub" placeholder="Odoo implementatie — beveiligde toegang"></div>
+        <div class="cfg-field"><label>Contact e-mail (login footer)</label><input type="text" id="cfgContactEmail" placeholder="info@tpx.eu"></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Uurtarieven per rol</h3>
+      <p style="font-size:11px;color:#6b7fa3;margin-bottom:10px">Standaard tarieven per rol. Je kan dit per persoon overschrijven in de gebruikerstabel hieronder.</p>
+      <table class="rate-table">
+        <thead><tr><th>Rol</th><th>Uurtarief (€)</th><th>Beschrijving</th></tr></thead>
+        <tbody id="roleRateBody"></tbody>
+      </table>
+    </div>
+
+    <div class="modal-section">
+      <h3>T-shirt sizing — uren per categorie</h3>
+      <p style="font-size:11px;color:#6b7fa3;margin-bottom:10px">Stel de minimum- en maximumuren in per grootte. Het budget wordt berekend op basis van de toegewezen rol van de TPX-medewerker.</p>
+      <table class="size-table">
+        <thead><tr><th>Grootte</th><th>Min (u)</th><th>Max (u)</th><th>Typisch voor</th></tr></thead>
+        <tbody id="sizeConfigBody"></tbody>
+      </table>
+    </div>
+
+    <div class="modal-section">
+      <h3>Domeinen</h3>
+      <div class="domain-tags" id="domainTagList"></div>
+      <div class="domain-add-row">
+        <input type="text" id="newDomainInput" placeholder="Nieuw domein...">
+        <button onclick="addDomain()">Toevoegen</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="mabtn" onclick="closeConfig()">Annuleren</button>
+      <button class="mabtn save" onclick="saveConfig()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MANAGEMENT MODAL (TPX + PM) -->
+<div class="modal-bg" id="userModal">
+  <div class="modal" style="width:760px">
+    <h2>Gebruikers & toegang</h2>
+    <p style="font-size:12px;color:#6b7fa3;margin-bottom:16px">TPX Projectmanager kan tarieven en rollen aanpassen. Klant-gebruikers zien enkel status en taakverdeling — geen tarieven of sizing.</p>
+
+    <div class="modal-section">
+      <h3>Gebruikers</h3>
+      <table class="user-table">
+        <thead><tr><th>Naam</th><th>E-mailadres</th><th>PIN</th><th>Rol</th><th>Tarief-override (€/u)</th><th></th></tr></thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+      <button class="add-row-btn" onclick="addUserRow()">+ Gebruiker toevoegen</button>
+    </div>
+
+    <div class="modal-section">
+      <h3>TPX team (voor taakverdeling)</h3>
+      <div id="tpxMemberList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="newTPX" placeholder="Naam..." style="flex:1;padding:6px 10px;border:1px solid #d0dce8;border-radius:6px;font-size:12px">
+        <button onclick="addMember('tpx')" style="padding:6px 12px;border:1px solid #1E6FD9;border-radius:6px;background:#1E6FD9;color:#fff;font-size:12px;cursor:pointer">+</button>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Klant team (voor taakverdeling)</h3>
+      <div id="clientMemberList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="newClient" placeholder="Naam..." style="flex:1;padding:6px 10px;border:1px solid #d0dce8;border-radius:6px;font-size:12px">
+        <button onclick="addMember('client')" style="padding:6px 12px;border:1px solid #1E6FD9;border-radius:6px;background:#1E6FD9;color:#fff;font-size:12px;cursor:pointer">+</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="mabtn" onclick="closeUserMgmt()">Annuleren</button>
+      <button class="mabtn save" onclick="saveUsers()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORK ITEM EDITOR MODAL -->
+<div class="modal-bg" id="wiModal">
+  <div class="wi-modal">
+    <div class="wi-modal-head">
+      <h2>✎ Work items beheren</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" class="wi-search" id="wiSearch" placeholder="Zoeken..." oninput="renderWIEditor()">
+        <select id="wiDomainFilter" style="font-size:12px;padding:6px 8px;border:1px solid #d0dce8;border-radius:6px;background:#fff" onchange="renderWIEditor()">
+          <option value="">Alle domeinen</option>
+        </select>
+        <button class="mabtn" onclick="closeWIEditor()">✕ Sluiten</button>
+      </div>
+    </div>
+    <div class="wi-modal-body" id="wiModalBody"></div>
+    <div class="wi-modal-foot">
+      <div style="flex:1;font-size:11px;color:#6b7fa3" id="wiFooterStats"></div>
+      <button class="mabtn" onclick="closeWIEditor()">Annuleren</button>
+      <button class="mabtn save" onclick="saveWIEditor()">Opslaan &amp; sluiten</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPABASE MIGRATIE — v7 vereist de volgende aanpassingen:
+
+   1) Kolommen toevoegen aan work_items (indien nog niet gedaan in v5):
+   ALTER TABLE work_items
+     ADD COLUMN IF NOT EXISTS estimated_hours numeric,
+     ADD COLUMN IF NOT EXISTS internal_notes text DEFAULT '',
+     ADD COLUMN IF NOT EXISTS internal_status text DEFAULT '',
+     ADD COLUMN IF NOT EXISTS acceptance_criteria text DEFAULT '',
+     ADD COLUMN IF NOT EXISTS created_date date,
+     ADD COLUMN IF NOT EXISTS resolved_date date;
+
+   2) Nieuwe tabel time_entries aanmaken (indien nog niet gedaan in v5):
+   CREATE TABLE IF NOT EXISTS time_entries (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     work_item_id integer,
+     person text NOT NULL,
+     entry_date date NOT NULL,
+     hours numeric NOT NULL,
+     description text DEFAULT '',
+     created_at timestamptz DEFAULT now()
+   );
+   ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "allow all" ON time_entries FOR ALL USING (true) WITH CHECK (true);
+
+   3) NIEUW v7/v8 — tabel voor custom work item definities:
+   CREATE TABLE IF NOT EXISTS work_item_defs (
+     id integer PRIMARY KEY,
+     wi text DEFAULT '',
+     domain text DEFAULT '',
+     feature text NOT NULL,
+     description text DEFAULT '',
+     cat text DEFAULT '',
+     moscow text DEFAULT '',
+     scope text DEFAULT '',
+     sort_order integer DEFAULT 0,
+     acceptance_criteria text DEFAULT '',
+     created_date date,
+     resolved_date date,
+     updated_at timestamptz DEFAULT now()
+   );
+   ALTER TABLE work_item_defs ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "allow all" ON work_item_defs FOR ALL USING (true) WITH CHECK (true);
+
+   4) NIEUW v9 — sign-off tabel:
+   CREATE TABLE IF NOT EXISTS signoffs (
+     work_item_id integer PRIMARY KEY,
+     status text DEFAULT 'pending',
+     signed_by text DEFAULT '',
+     signed_at date,
+     remark text DEFAULT '',
+     updated_at timestamptz DEFAULT now()
+   );
+   ALTER TABLE signoffs ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "allow all" ON signoffs FOR ALL USING (true) WITH CHECK (true);
+
+   5) NIEUW v9 — milestones tabel:
+   CREATE TABLE IF NOT EXISTS milestones (
+     id text PRIMARY KEY,
+     name text NOT NULL,
+     target_date date,
+     status text DEFAULT 'open',
+     note text DEFAULT '',
+     sort_order integer DEFAULT 0,
+     updated_at timestamptz DEFAULT now()
+   );
+   ALTER TABLE milestones ENABLE ROW LEVEL SECURITY;
+   CREATE POLICY "allow all" ON milestones FOR ALL USING (true) WITH CHECK (true);
+═══════════════════════════════════════════════════════════════════════════ */
+// ── DEFAULT CONFIG (editable by PM) ──────────────────────────────────────────
+let config = {
+  projectName: 'Cafimo Odoo Implementatie',
+  clientName:  'Cafimo',
+  loginSub:    'Odoo implementatie — beveiligde toegang',
+  contactEmail:'info@tpx.eu',
+  roleRates: [
+    {role:'Consultant',        rate:110, desc:'Junior implementatie'},
+    {role:'Senior Consultant', rate:135, desc:'Senior implementatie'},
+    {role:'Senior Developer',  rate:145, desc:'Technische ontwikkeling'},
+    {role:'Architect',         rate:160, desc:'Technisch architect'},
+    {role:'Project Manager',   rate:150, desc:'Projectbeheer & coördinatie'},
+  ],
+  sizes: [
+    {label:'XS', min:2,  max:4,  hint:'Config, kleine aanpassing'},
+    {label:'S',  min:4,  max:8,  hint:'Standaard Odoo Fit'},
+    {label:'M',  min:8,  max:16, hint:'Fit met complexiteit of lichte Gap'},
+    {label:'L',  min:16, max:32, hint:'Gap / custom development'},
+    {label:'XL', min:32, max:64, hint:'Complexe custom module'},
+  ],
+  domains: ['Accounting','Inventory','Helpdesk / Quality','Purchasing','Sales','Projects','Architecture','Users & Security'],
+};
+
+// ── USERS ────────────────────────────────────────────────────────────────────
+// roles: 'pm' (TPX projectmanager), 'tpx' (TPX member), 'client'
+let users = [
+  {name:'Jan',   email:'jan@tpx.eu',       pin:'1234', role:'pm',     tpxRole:'Project Manager', rateOverride:null},
+  {name:'Herre', email:'herre@tpx.eu',     pin:'2345', role:'tpx',    tpxRole:'Senior Consultant',rateOverride:null},
+  {name:'Stef',  email:'stef@tpx.eu',      pin:'3456', role:'tpx',    tpxRole:'Consultant',       rateOverride:null},
+  {name:'Finance Cafimo', email:'finance@cafimo.be', pin:'9001', role:'client', tpxRole:'', rateOverride:null},
+  {name:'IT Cafimo',      email:'it@cafimo.be',      pin:'9002', role:'client', tpxRole:'', rateOverride:null},
+];
+
+let team = {
+  tpx:    ['Jan','Herre','Stef'],
+  client: ['Domain Lead Finance','Domain Lead Inventory','Domain Lead Sales','Domain Lead IT'],
+};
+
+// ── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://lqbybobkhlgkpthqsnnx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxYnlib2JraGxna3B0aHFzbm54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDg1MjIsImV4cCI6MjA5MzAyNDUyMn0.3yJAjs4fwkKuuE3xuTfXfe1WWaAZFeQBh662Xe4WVZk';
+
+async function supaFetch(path, method='GET', body=null){
+  const opts={method,headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'resolution=merge-duplicates':''}};
+  if(body) opts.body=JSON.stringify(body);
+  const res=await fetch(SUPA_URL+'/rest/v1/'+path,opts);
+  if(method==='GET') return await res.json();
+  return res.ok;
+}
+
+async function loadFromSupabase(){
+  // Load work item definitions first — may override/extend RAW
+  try{
+    const defs=await supaFetch('work_item_defs?select=*&order=sort_order.asc,id.asc');
+    if(Array.isArray(defs)&&defs.length){
+      // Merge: update existing RAW items + add new ones from DB
+      defs.forEach(def=>{
+        const idx=RAW.findIndex(r=>r.id===def.id);
+        const mapped={id:def.id,wi:def.wi||'',domain:def.domain||'',feature:def.feature||'',desc:def.description||'',cat:def.cat||'',moscow:def.moscow||'',scope:def.scope||''};
+        // also restore per-item pm fields from defs
+        if(!pm[def.id]) pm[def.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:''};
+        if(def.acceptance_criteria) pm[def.id].acceptanceCriteria=def.acceptance_criteria;
+        if(def.created_date) pm[def.id].createdDate=def.created_date;
+        if(def.resolved_date) pm[def.id].resolvedDate=def.resolved_date;
+        if(idx>=0){ RAW[idx]=mapped; }
+        else { RAW.push(mapped); if(!pm[def.id]) pm[def.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:''}; }
+      });
+      // Remove items that were deleted in DB (only if DB has items)
+      const dbIds=new Set(defs.map(d=>d.id));
+      for(let i=RAW.length-1;i>=0;i--){ if(!dbIds.has(RAW[i].id)) RAW.splice(i,1); }
+    }
+  }catch(e){console.warn('Supabase work_item_defs load failed — using built-in RAW',e);}
+
+  try{
+    const rows=await supaFetch('work_items?select=*');
+    if(!Array.isArray(rows)) return;
+    rows.forEach(row=>{
+      if(pm[row.id]){
+        pm[row.id].size=row.size||null;
+        pm[row.id].status=row.status||'todo';
+        pm[row.id].tpxAssignee=row.tpx_assignee||'';
+        pm[row.id].clientAssignee=row.client_assignee||'';
+        pm[row.id].actualHours=row.actual_hours!==null?row.actual_hours:null;
+        pm[row.id].estimatedHours=row.estimated_hours!==null?row.estimated_hours:null;
+        pm[row.id].internalNotes=row.internal_notes||'';
+        pm[row.id].internalStatus=row.internal_status||'';
+        pm[row.id].acceptanceCriteria=row.acceptance_criteria||'';
+        pm[row.id].createdDate=row.created_date||'';
+        pm[row.id].resolvedDate=row.resolved_date||'';
+      }
+    });
+  }catch(e){console.warn('Supabase work_items load failed',e);}
+
+  try{
+    const entries=await supaFetch('time_entries?select=*&order=entry_date.desc');
+    if(Array.isArray(entries)) timeEntries=entries;
+  }catch(e){console.warn('Supabase time_entries load failed',e);}
+  try{
+    const sos=await supaFetch('signoffs?select=*');
+    if(Array.isArray(sos)) sos.forEach(r=>{
+      if(signoffs[r.work_item_id]) signoffs[r.work_item_id]={status:r.status||'pending',signedBy:r.signed_by||'',signedAt:r.signed_at||'',remark:r.remark||''};
+    });
+  }catch(e){console.warn('Supabase signoffs load failed',e);}
+  try{
+    const ms=await supaFetch('milestones?select=*&order=sort_order.asc');
+    if(Array.isArray(ms)&&ms.length) milestones=ms.map(r=>({id:r.id,name:r.name,targetDate:r.target_date||'',status:r.status||'open',note:r.note||''}));
+  }catch(e){console.warn('Supabase milestones load failed',e);}
+}
+
+async function saveToSupabase(id){
+  const p=pm[id];
+  try{
+    await supaFetch('work_items','POST',[{
+      id,
+      size:p.size||null,
+      status:p.status||'todo',
+      tpx_assignee:p.tpxAssignee||'',
+      client_assignee:p.clientAssignee||'',
+      actual_hours:(p.actualHours!==null&&p.actualHours!=='')?p.actualHours:null,
+      estimated_hours:(p.estimatedHours!==null&&p.estimatedHours!=='')?p.estimatedHours:null,
+      internal_notes:p.internalNotes||'',
+      internal_status:p.internalStatus||'',
+      acceptance_criteria:p.acceptanceCriteria||'',
+      created_date:p.createdDate||null,
+      resolved_date:p.resolvedDate||null,
+      updated_at:new Date().toISOString()
+    }]);
+  }catch(e){console.warn('Supabase save failed',e);}
+}
+
+async function saveTimeEntry(entry){
+  try{
+    await supaFetch('time_entries','POST',[entry]);
+  }catch(e){console.warn('Supabase time_entries save failed',e);}
+}
+
+async function deleteTimeEntry(id){
+  try{
+    await supaFetch(`time_entries?id=eq.${id}`,'DELETE');
+    timeEntries=timeEntries.filter(e=>e.id!==id);
+    renderTimesheet();
+  }catch(e){console.warn('Supabase delete failed',e);}
+}
+
+async function saveSignoff(itemId){
+  const s=signoffs[itemId];
+  try{
+    await supaFetch('signoffs','POST',[{work_item_id:itemId,status:s.status,signed_by:s.signedBy,signed_at:s.signedAt,remark:s.remark,updated_at:new Date().toISOString()}]);
+  }catch(e){console.warn('Supabase signoff save failed',e);}
+}
+
+async function saveMilestone(ms){
+  try{
+    await supaFetch('milestones','POST',[{id:ms.id,name:ms.name,target_date:ms.targetDate||null,status:ms.status,note:ms.note,sort_order:milestones.indexOf(ms),updated_at:new Date().toISOString()}]);
+  }catch(e){console.warn('Supabase milestone save failed',e);}
+}
+
+// ── WORK ITEM STATE ──────────────────────────────────────────────────────────
+const RAW = [{"id":1,"wi":"Contact migration","domain":"Architecture","feature":"Contacts","desc":"- Setup of the contact master data structure in Odoo covering customers, supplie","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":2,"wi":"Contact migration","domain":"Architecture","feature":"Contact migration from legacy","desc":"- Migrate existing FileMaker; Adsolut contact data to Odoo - Import and validati","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":3,"wi":"Contact migration","domain":"Architecture","feature":"Multi-company setup (OCA)","desc":"- Enable multi-company limitation for contacts to specify for which company a co","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":4,"wi":"Contact migration","domain":"Architecture","feature":"Initial load","desc":"- Initial load of contact master data into Odoo covering customers, suppliers an","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":5,"wi":"Product migration","domain":"Architecture","feature":"Product categories","desc":"- Configuration of product categories in Odoo to group products for accounting, ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":6,"wi":"Product migration","domain":"Architecture","feature":"Vehicle definition","desc":"- Improve and standardize how vehicle data is used across the system, while rede","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":7,"wi":"Product migration","domain":"Architecture","feature":"Products definition","desc":"- Configuration of product types in Odoo (storable, consumable, service) to ensu","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":8,"wi":"Product migration","domain":"Architecture","feature":"Initial load","desc":"@Herre","cat":"","moscow":"Define need","scope":""},{"id":9,"wi":"CarsBO","domain":"Architecture","feature":"Phase out CarsBO module","desc":"","cat":"","moscow":"","scope":""},{"id":10,"wi":"Core Setup","domain":"Accounting","feature":"Opening Balance sheet","desc":"- Entry of the opening balance sheet in Odoo via a miscellaneous journal entry -","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":11,"wi":"Core Setup","domain":"Accounting","feature":"Opening Customers","desc":"- Entry of outstanding customer receivable at the start of Odoo - Each outstandi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":12,"wi":"Core Setup","domain":"Accounting","feature":"Opening Supplier","desc":"- Entry of outstanding supplier liabilities at the start of Odoo - All outstandi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":13,"wi":"Core Setup","domain":"Accounting","feature":"Historical P&L (YTD Comparison)","desc":"- Import of previous year's monthly P&L figures (account classes 6 and 7) into O","cat":"Fit","moscow":"Should have","scope":"In Scope"},{"id":14,"wi":"Core Setup","domain":"Accounting","feature":"Chart of Accounts","desc":"- Chart of accounts received from client and compared to Odoo standard CoA - Acc","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":15,"wi":"Core Setup","domain":"Accounting","feature":"Taxes & Fiscal Positions","desc":"- Configuration of VAT codes, VAT rates and fiscal positions in Odoo_x000D_ - Fi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":16,"wi":"Core Setup","domain":"Accounting","feature":"VIES / Intracommunity","desc":"- Configuration of VIES validation in Odoo for intra- community transactions - V","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":17,"wi":"Core Setup","domain":"Accounting","feature":"Journals (sequences)","desc":"- Creating and configuring accounting journals (sales, purchase, bank, cash, mis","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":18,"wi":"Core Setup","domain":"Accounting","feature":"Document management","desc":"- Configuration of the Odoo Documents app as a centralised document repository -","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":19,"wi":"Core Setup","domain":"Accounting","feature":"Miscellaneous entries","desc":"- Configuration and use of the general journal for manual journal entries_x000D_","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":20,"wi":"Accounts Receivable","domain":"Accounting","feature":"Customer Invoicing","desc":"- Setting up the complete customer invoicing process in Odoo_x000D_ - Covers cre","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":21,"wi":"Accounts Receivable","domain":"Accounting","feature":"Peppol compliance","desc":"- Configuration of Peppol e- invoicing compliance for outbound customer invoices","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":22,"wi":"Accounts Receivable","domain":"Accounting","feature":"Customer re- invoicing (recharging)","desc":"- Custom recharging feature to re- invoice one or multiple vendor bills to inter","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":23,"wi":"Accounts Receivable","domain":"Accounting","feature":"Follow- ups","desc":"- Configuration of the follow- up module for tracking outstanding customer invoi","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":24,"wi":"Accounts Receivable","domain":"Accounting","feature":"Limit customers with open receivables based on a thresh","desc":"- Configuration of a credit limit per customer at contact level in Odoo  - When ","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":25,"wi":"Accounts Payable","domain":"Accounting","feature":"Vendor Bills","desc":"- Setting up the vendor bill process in Odoo - Covers registration, linking to p","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":26,"wi":"Accounts Payable","domain":"Accounting","feature":"Peppol compliance","desc":"- Configuration of Peppol access point for receiving inbound vendor bills electr","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":27,"wi":"Accounts Payable","domain":"Accounting","feature":"Vendor Bill digisation","desc":"- Configuration of vendor bill intake via Odoo Documents app and OCR_x000D_ - Bi","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":28,"wi":"Accounts Payable","domain":"Accounting","feature":"Multi- vehicle Vendor Bill","desc":"- Handling of vendor bills covering multiple vehicles (transport bill) - One bil","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":29,"wi":"Accounts Payable","domain":"Accounting","feature":"Withholding obligation -  Art. 20bis","desc":"- Warning mechanism for suppliers subject to Belgian withholding obligation unde","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":30,"wi":"Accounts Payable","domain":"Accounting","feature":"Road taks processing (verkeersbelasting)","desc":"- Automated processing of large volumes of road tax assessment notices (aanslagb","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":31,"wi":"Accounts Payable","domain":"Accounting","feature":"Provisional Costs (Landed costs, transport)","desc":"- Provisional cost entries for transport and commission accrued at time of vehic","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":32,"wi":"Approvals","domain":"Accounting","feature":"Approval routing","desc":"- Vendor bills are routed to the correct approver before posting based on config","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":33,"wi":"Approvals","domain":"Accounting","feature":"Mass approval","desc":"- From the vendor bill list view, multiple bills can be selected and submitted f","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":34,"wi":"Approvals","domain":"Accounting","feature":"Approval deviation","desc":"- An approver can deviate an incoming approval request to another person when th","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":35,"wi":"Approvals","domain":"Accounting","feature":"Centralied approval communication","desc":"- All communication related to the approval of a vendor bill is centralised on t","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":36,"wi":"Approvals","domain":"Accounting","feature":"Approval security","desc":"- A user with minimal or no accounting access rights can approve a vendor bill w","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":37,"wi":"Bank & payments","domain":"Accounting","feature":"Bank Feeds (CODA/CAMT)","desc":"- Connecting bank statements to Odoo via CODA (BE) - Bank statements automatical","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":38,"wi":"Bank & payments","domain":"Accounting","feature":"Reconciliation","desc":"- Reconciliation of bank statements with outstanding invoices and entries in Odo","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":39,"wi":"Bank & payments","domain":"Accounting","feature":"(pre)Payments","desc":"- Registration and processing of payments in Odoo (incoming and outgoing)  - SEP","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":40,"wi":"Bank & payments","domain":"Accounting","feature":"Batch Payments","desc":"- Grouping of multiple payments into one SEPA batch payment file per payment run","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":41,"wi":"Bank & payments","domain":"Accounting","feature":"Payment swap","desc":"- Structured flow to correct payments linked to the wrong sales order_x000D_ - P","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":42,"wi":"Bank & payments","domain":"Accounting","feature":"Straight loan -  fixed advance","desc":"- Recording and tracking of straight loans or fixed advances from the bank_x000D","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":43,"wi":"Bank & payments","domain":"Accounting","feature":"Bank account validation","desc":"- Matching mechanism checks account holder name against invoice or proforma","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":44,"wi":"Bank & payments","domain":"Accounting","feature":"bank accounts -  TPX module","desc":"- Documents linked to a bank account and stored in predefined folders in the Doc","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":45,"wi":"Bank & payments","domain":"Accounting","feature":"Report bank accounts -  TPX module","desc":"- Report available under Accounting showing all changes made to bank account num","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":46,"wi":"Bank & payments","domain":"Accounting","feature":"Currencies","desc":"- Configuration of foreign currencies including automatic exchange rate updates ","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":47,"wi":"Bank & payments","domain":"Accounting","feature":"Credit Card flow","desc":"- Configuration of a Credit Card Journal in Odoo_x000D_ - Expenses processed and","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":48,"wi":"Analytical accounting","domain":"Accounting","feature":"Analytic Accounts","desc":"- Setting up analytic accounts and plans for internal reporting_x000D_ - Reporti","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":49,"wi":"Analytical accounting","domain":"Accounting","feature":"Analytic Budgets","desc":"- Creating and managing analytic budgets in Odoo_x000D_ - Actual costs and reven","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":50,"wi":"Analytical accounting","domain":"Accounting","feature":"Fleet","desc":"- Managing vehicles and related costs in Odoo Fleet_x000D_ - Integration with ac","cat":"Fit","moscow":"Should have","scope":"In Scope"},{"id":51,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Cost traceability per vehicle","desc":"- All costs and revenues related to a vehicle are tracked via the chassis number","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":52,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Analtyic plan & account configuration","desc":"- Configure one analytic plan 'vehicles' in Odoo.  - One analytic account is cre","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":53,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Cost type mapping description","desc":"- All revelant cost types are analyticcaly linked to the VIN at the point of pos","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":54,"wi":"Traceability per vehicle (analytica","domain":"Accounting","feature":"Revenue mapping description","desc":"- Sales invoices and rechages costs billed are analytically linked to te corresp","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":55,"wi":"Stock valuation","domain":"Accounting","feature":"Costing methods","desc":"- Configuration of inventory costing methods in Odoo (standard price, average co","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":56,"wi":"Stock valuation","domain":"Accounting","feature":"Inventory valuation","desc":"- Configuration of automated inventory valuation in Odoo to ensure that all stoc","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":57,"wi":"Reporting","domain":"Accounting","feature":"Accounting period control","desc":"- Configuration of a period control mechanism to ensure bills are booked in the ","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":58,"wi":"Reporting","domain":"Accounting","feature":"Financial & management reporting","desc":"- Configuration of financial and management reports in Odoo_x000D_ - Covers bala","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":59,"wi":"Reporting","domain":"Accounting","feature":"Statutory & Tax reporting","desc":"- Setting up statutory and tax reports in Odoo_x000D_ - Covers VAT return, custo","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":60,"wi":"Reporting","domain":"Accounting","feature":"Audit & Compliance","desc":"- Setting up audit trails and compliance controls in Odoo - All accounting chang","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":61,"wi":"Reporting","domain":"Accounting","feature":"Weekly bank report","desc":"- Weekly reporting flow providing the bank with a credit line position overview_","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":62,"wi":"Reporting","domain":"Accounting","feature":"Consolidated reporting -  horizontal groups","desc":"- Setting up consolidated financial reporting across multiple entities (horizont","cat":"Fit","moscow":"Could have","scope":"In Scope"},{"id":63,"wi":"Reporting","domain":"Accounting","feature":"Intrastat","desc":"- Configuration of Intrastat reporting for intra- community goods movements - Ve","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":64,"wi":"Reporting","domain":"Accounting","feature":"Asset management","desc":"- Managing fixed assets in Odoo - Configuring depreciation plans (straight- line","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":65,"wi":"Reporting","domain":"Accounting","feature":"Deferred costs & revenues","desc":"- Setting up deferred costs (prepaid expenses) and deferred revenues (unearned i","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":66,"wi":"Reporting","domain":"Accounting","feature":"Bills to receive & invoices to be issued.","desc":"- Accruals reports for tracking goods/services received but not yet invoiced (bi","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":67,"wi":"Reporting","domain":"Accounting","feature":"Cars dashboard - Stock valuation + accruals per VIN","desc":"A per-VIN vehicle dashboard in Odoo that replaces the current manual Excel stock","cat":"Gap","moscow":"Should have","scope":"In Scope"},{"id":68,"wi":"Reporting","domain":"Accounting","feature":"Lock dates","desc":"- Setting lock dates in Odoo to protect closed periods_x000D_ - Entries in a loc","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":69,"wi":"Reporting","domain":"Accounting","feature":"Marge register","desc":"- Margin report for second- hand vehicle trading under the VAT margin scheme_x00","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":70,"wi":"Reporting","domain":"Accounting","feature":"Garage register","desc":"- Digital garage register as required by the Belgian VAT administration for Cafi","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":71,"wi":"Core Setup","domain":"Inventory","feature":"Warehouse","desc":"- Configuration and/or mapping of warehouses in Odoo. - One Warehouse to manage ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":72,"wi":"Core Setup","domain":"Inventory","feature":"Locations","desc":"- Configuration of inventory locations in Odoo including storage locations, virt","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":73,"wi":"Core Setup","domain":"Inventory","feature":"Creation of location based on stock location per partne","desc":"- On warehouse level enhanced configuration allows to automatically create locat","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":74,"wi":"Core Setup","domain":"Inventory","feature":"Storage categories","desc":"- Setup of storage categories for related characteristics per inventory location","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":75,"wi":"Core Setup","domain":"Inventory","feature":"Physical location of vehicles","desc":"- Each vehicle holds a physical location which is not maintained under a default","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":76,"wi":"Inventory master data","domain":"Inventory","feature":"Units of measure","desc":"- Configuration of units of measure in Odoo for inventory management, including ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":77,"wi":"Inventory master data","domain":"Inventory","feature":"Removal strategy","desc":"- Configuration of picking strategies in Odoo such as first in first out, closes","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":78,"wi":"Inventory master data","domain":"Inventory","feature":"Packaging","desc":"- Configuration of product packaging in Odoo to manage how products are packed f","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":79,"wi":"Inventory master data","domain":"Inventory","feature":"Expiration dates","desc":"- Configuration of expiration date tracking in Odoo for products with a limited ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":80,"wi":"Reporting","domain":"Inventory","feature":"Serial numbers","desc":"- Configuration of lot and serial number traceability in Odoo to track unique se","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":81,"wi":"Operations","domain":"Inventory","feature":"Operation types","desc":"- Configuration of operation types in Odoo to define the different types of move","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":82,"wi":"Operations","domain":"Inventory","feature":"Barcode scanning","desc":"- Configuration of barcode scanning in Odoo for warehouse operations including r","cat":"Gap","moscow":"No need","scope":"Out of Scope"},{"id":83,"wi":"Operations","domain":"Inventory","feature":"Reservation method","desc":"- Configuration of stock reservation  in Odoo to allocate available stock to con","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":84,"wi":"Operations","domain":"Inventory","feature":"Incoming transfers","desc":"- Configuration of the transfer flow in Odoo where each transfer corresponds to ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":85,"wi":"Operations","domain":"Inventory","feature":"Grouping incoming transfers","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":86,"wi":"Operations","domain":"Inventory","feature":"Add missing components on receipts (creation of unique ","desc":"- 2nd key; \u2026  - List of items on transfer / vehicles - List of standard item - C","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":87,"wi":"Operations","domain":"Inventory","feature":"Documents as loose items","desc":"- Different handling","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":88,"wi":"Operations","domain":"Inventory","feature":"Internal transfers","desc":"- Configuration of internal transfer operations in Odoo for moving stock between","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":89,"wi":"Operations","domain":"Inventory","feature":"Outgoing tranfers","desc":"- Configuration of the transfer flow in Odoo where each transfer corresponds to ","cat":"","moscow":"Define need","scope":"In Scope"},{"id":90,"wi":"Operations","domain":"Inventory","feature":"Grouping outgoing tranfers","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":91,"wi":"Operations","domain":"Inventory","feature":"Backorders","desc":"- Configuration of the inventory backorder flow for partially fulfilled orders -","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":92,"wi":"Core Operations","domain":"Inventory","feature":"Quality checks","desc":"- Configuration of quality check points in Odoo inventory operations to inspect ","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":93,"wi":"Operations","domain":"Inventory","feature":"Shipping","desc":"- Configuration of carrier integration in Odoo for outbound shipments including ","cat":"Gap","moscow":"Define need","scope":"Out of Scope"},{"id":94,"wi":"Operations","domain":"Inventory","feature":"Batch management","desc":"- Configuration of batch transfers in Odoo for both inbound and outbound vehicle","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":95,"wi":"Routes & rules","domain":"Inventory","feature":"Buy from vendor","desc":"- Configuration of inventory routes & rules in Odoo to define how products moved","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":96,"wi":"Routes & rules","domain":"Inventory","feature":"Buy from consignment","desc":"- Goods stored under consignment are purchased from the vendor while being servi","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":97,"wi":"Routes & rules","domain":"Inventory","feature":"Sell to customer","desc":"- Configuration of general stock sales to Customer in Odoo for owned goods.","cat":"","moscow":"Define need","scope":"In Scope"},{"id":98,"wi":"Routes & rules","domain":"Inventory","feature":"Sell consignment stock to customer","desc":"- Consignment sales to customer","cat":"","moscow":"Define need","scope":"In Scope"},{"id":99,"wi":"Routes & rules","domain":"Inventory","feature":"Sell via consignee customer","desc":"- Configuration of consignee stock sales in Odoo for owned good stored at a thir","cat":"","moscow":"Define need","scope":"In Scope"},{"id":100,"wi":"Routes & rules","domain":"Inventory","feature":"Sell virtual stock to customer","desc":"- Virtual stock sales to customer - Stock is not stored or procured upfront; onl","cat":"","moscow":"Define need","scope":"In Scope"},{"id":101,"wi":"Routes & rules","domain":"Inventory","feature":"Replenishment","desc":"- Configuration of inventory reordering rules in Odoo to automatically generate ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":102,"wi":"Control","domain":"Inventory","feature":"Days in stock","desc":"- A daily update to register the amount of days a vehicle is stored per warehous","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":103,"wi":"Control","domain":"Inventory","feature":"Filling rate & forecast","desc":"- Add counter on location level and define capacity per location - Calculate fil","cat":"Define category","moscow":"Must have","scope":"In Scope"},{"id":104,"wi":"Control","domain":"Inventory","feature":"VIN Validation & Duplicate prevention","desc":"- Configuration of a mandatory VIN (chassis number) validation flow in Odoo to p","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":105,"wi":"Control","domain":"Inventory","feature":"Cross-transfer search on VIN number.","desc":"","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":106,"wi":"Control","domain":"Inventory","feature":"Optimization of the CARS Int'l application","desc":"- 1 app for all inventory related topics - 1 app for transport - Search on VIN; ","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":107,"wi":"Documents","domain":"Inventory","feature":"Vehicle Sheet (Carsbo + Odoo)","desc":"- Configuration of the vehicle sheet in Odoo as the central record for each vehi","cat":"","moscow":"Must have","scope":"In Scope"},{"id":108,"wi":"Documents","domain":"Inventory","feature":"QR code under Vehicle sheet","desc":"To define","cat":"","moscow":"Won't have","scope":"In Scope"},{"id":109,"wi":"Documents","domain":"Inventory","feature":"PDI Pre Dilvery Inspection","desc":"- Configuration of the pre- delivery inspection flow in Odoo as a quality check ","cat":"","moscow":"Should have","scope":"In Scope"},{"id":110,"wi":"Documents","domain":"Inventory","feature":"PUA Creation","desc":"- Configuration of the outgoing transfer flow in Odoo including the mandatory ge","cat":"","moscow":"Must have","scope":"In Scope"},{"id":111,"wi":"Documents","domain":"Inventory","feature":"CMR","desc":"- A CMR (Convention on the Contract for the International Carriage of Goods by R","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":112,"wi":"Scrap & Physical inventory","domain":"Inventory","feature":"Cycle counting","desc":"- Configuration of cycle counting on location in Odoo to perform ongoing partial","cat":"","moscow":"No need","scope":"Out of Scope"},{"id":113,"wi":"Scrap & Physical inventory","domain":"Inventory","feature":"Scrapping of stock","desc":"- Configuration of the scrap flow in Odoo to remove damaged or unusable products","cat":"","moscow":"No need","scope":"Out of Scope"},{"id":114,"wi":"Reporting","domain":"Inventory","feature":"Stock reporting","desc":"- Use of standard inventory reports in Odoo including current stock levels, stoc","cat":"","moscow":"Define need","scope":"In Scope"},{"id":115,"wi":"3trd party logistic services","domain":"Inventory","feature":"Service level agreements","desc":"- Configuration of service level agreements per 3PL related customer in Odoo def","cat":"","moscow":"Define need","scope":"In Scope"},{"id":116,"wi":"3trd party logistic services","domain":"Inventory","feature":"Receive in consignment","desc":"- Configuration of consignment stock management in Odoo for vehicles owned by th","cat":"","moscow":"Define need","scope":"In Scope"},{"id":117,"wi":"3trd party logistic services","domain":"Inventory","feature":"Flow from Salesorder","desc":"","cat":"","moscow":"Define need","scope":""},{"id":118,"wi":"3trd party logistic services","domain":"Inventory","feature":"Return ouf of consignment","desc":"- Configuration of consignment stock management in Odoo for vehicles owned by th","cat":"","moscow":"Define need","scope":"In Scope"},{"id":119,"wi":"3trd party logistic services","domain":"Inventory","feature":"Task management","desc":"- Configuration of the 3PL task management flow in Odoo for logistics services p","cat":"","moscow":"Define need","scope":"In Scope"},{"id":120,"wi":"3trd party logistic services","domain":"Inventory","feature":"Recurring tasks for charging of vehicles","desc":"- Key parameters include charging intervals (30/60/90 days), carwash rules and f","cat":"","moscow":"Define need","scope":"In Scope"},{"id":121,"wi":"3trd party logistic services","domain":"Inventory","feature":"Time based tasks on demand","desc":"- Time-based tasks on demand","cat":"","moscow":"Define need","scope":"In Scope"},{"id":122,"wi":"3trd party logistic services","domain":"Inventory","feature":"Returning with open tasks","desc":"- Returning with open tasks if coming from repairs","cat":"","moscow":"Define need","scope":"In Scope"},{"id":123,"wi":"3trd party logistic services","domain":"Inventory","feature":"External cost allocation on tasks via Sales orders","desc":"- Tasks performed on stock of other stock owners is charged at a SLO defined cos","cat":"","moscow":"Define need","scope":"In Scope"},{"id":124,"wi":"3trd party logistic services","domain":"Inventory","feature":"Internal cost allocation on tasks","desc":"- Internal tasks for Carconnex own stock are registered at zero cost for billing","cat":"","moscow":"Define need","scope":"In Scope"},{"id":125,"wi":"3trd party logistic services","domain":"Inventory","feature":"Month-end Invoicing","desc":"- Configuration of the month- end invoicing run for 3PL customers based on the d","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":126,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk setup","desc":"- Configuration of the repair and damage management flow in Odoo to replace the ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":127,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Ticket categorisation","desc":"- Each ticket should be categorized on claim or damage and on responsible party.","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":128,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk linked to vehicles","desc":"- Ticket can be linked to vehicles for tracebility.","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":129,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Helpdesk from transfer","desc":"- During the processing of a transfer the creation of a helpdesk ticket should b","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":130,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"RFQ from helpdesk","desc":"- Purchase quotations (bestekken) can be linked to the repair dossier - All repa","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":131,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Quotaton from helpdesk","desc":"- All repair costs analytically linked to the chassis number","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":132,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Recharge invoices","desc":"- Damage can be recharged to third parties with a markup","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":133,"wi":"Repairs & damages","domain":"Helpdesk / Quality","feature":"Track inventory on repair","desc":"- Damages vehicles can be moved to vendors - Vehicles under repair can be tracke","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":134,"wi":"Core Setup","domain":"Projects","feature":"Project templates","desc":"- Configuration of project templates in Odoo to standardise the setup of new pro","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":135,"wi":"Core Setup","domain":"Projects","feature":"Task stages","desc":"- Configuration of task stages in Odoo to define the workflow through which task","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":136,"wi":"Tasks","domain":"Projects","feature":"Task creation","desc":"- Configuration of the task creation flow in Odoo including required fields, ass","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":137,"wi":"Tasks","domain":"Projects","feature":"Task assignment","desc":"- Configuration of task assignment rules in Odoo to ensure tasks are routed to t","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":138,"wi":"Tasks","domain":"Projects","feature":"Subtasks","desc":"- Configuration of subtask functionality in Odoo to break down complex tasks int","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":139,"wi":"Tasks","domain":"Projects","feature":"Dependencies","desc":"- Configuration of task dependencies in Odoo to define which tasks must be compl","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":140,"wi":"Planning","domain":"Projects","feature":"Resource planning","desc":"- Configuration of resource planning in Odoo to allocate team members to project","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":141,"wi":"Planning","domain":"Projects","feature":"Capacity planning","desc":"- Configuration of capacity planning in Odoo to provide management with a forwar","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":142,"wi":"Planning","domain":"Projects","feature":"Scheduling","desc":"- Configuration of project scheduling in Odoo including start and end dates, mil","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":143,"wi":"Time Tracking","domain":"Projects","feature":"Timesheets","desc":"- Configuration of timesheet logging in Odoo for project team members to record ","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":144,"wi":"Time Tracking","domain":"Projects","feature":"Billable time","desc":"- Configuration of billable time tracking in Odoo to distinguish between billabl","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":145,"wi":"Time Tracking","domain":"Projects","feature":"Timesheet approval","desc":"- Configuration of the timesheet approval flow in Odoo where logged hours are re","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":146,"wi":"Billing","domain":"Projects","feature":"Time & material billing","desc":"- Configuration of time and material billing in Odoo where customers are invoice","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":147,"wi":"Billing","domain":"Projects","feature":"Fixed price billing","desc":"- Configuration of fixed price billing in Odoo where customers are invoiced a pr","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":148,"wi":"Billing","domain":"Projects","feature":"Milestone billing","desc":"- Configuration of milestone- based billing in Odoo where invoices are triggered","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":149,"wi":"Billing","domain":"Projects","feature":"Prepaid services","desc":"- Configuration of prepaid service billing in Odoo where customers pay upfront f","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":150,"wi":"Cost Control","domain":"Projects","feature":"Project costs","desc":"- Configuration of project cost tracking in Odoo to capture all direct costs (la","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":151,"wi":"Cost Control","domain":"Projects","feature":"Budget tracking","desc":"- Configuration of project budgets in Odoo to set planned costs and revenues per","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":152,"wi":"Cost Control","domain":"Projects","feature":"Margin analysis","desc":"- Configuration of project margin analysis in Odoo to show the gross margin per ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":153,"wi":"Collaboration","domain":"Projects","feature":"Document management","desc":"- Configuration of document management within projects in Odoo, allowing project","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":154,"wi":"Reporting","domain":"Projects","feature":"Project profitability","desc":"- Configuration of project profitability reporting in Odoo to give management a ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":155,"wi":"Reporting","domain":"Projects","feature":"Utilization rates","desc":"- Configuration of utilisation rate reporting in Odoo to show the percentage of ","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":156,"wi":"Core Setup","domain":"Purchasing","feature":"Supplier pricelists","desc":"- Configuration of supplier pricelists in Odoo to manage purchase prices per ven","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":157,"wi":"Core Setup","domain":"Purchasing","feature":"Purchase units of measure","desc":"- Configuration of units of measure for purchasing, including conversions betwee","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":158,"wi":"Core Setup","domain":"Purchasing","feature":"Lead times","desc":"- Configuration of vendor lead times and security lead times in Odoo to ensure a","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":159,"wi":"Core Setup","domain":"Purchasing","feature":"Purchase agreements","desc":"- Configuration of purchase agreements in Odoo including blanket orders and purc","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":160,"wi":"Core Setup","domain":"Purchasing","feature":"Approval rules","desc":"- Configuration of purchase approval rules based on order amount or product cate","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":161,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Request for Quotation","desc":"- Setup and use of the request for quotation flow in Odoo_x000D_ - RFQs are sent","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":162,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Alternatives","desc":"- Configuration of the vendor comparison tool in Odoo to evaluate multiple suppl","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":163,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase Order creation","desc":"- Setup of the standard purchase order creation flow in Odoo, including manual c","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":164,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Blanket orders","desc":"- Configuration and use of blanket orders in Odoo to commit to purchasing a cert","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":165,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase order changes","desc":"- Configuration of the flow for modifying confirmed purchase orders, including q","cat":"Fit","moscow":"Define need","scope":""},{"id":166,"wi":"RFQ & Ordering","domain":"Purchasing","feature":"Purchase order types","desc":"- Configuration of different purchase order types in Odoo to distinguish between","cat":"Gap","moscow":"Must have","scope":""},{"id":167,"wi":"Transport ordering","domain":"Purchasing","feature":"Transport legs","desc":"From transfer, transport legs will be created","cat":"Gap","moscow":"Must have","scope":""},{"id":168,"wi":"Transport ordering","domain":"Purchasing","feature":"Transport management (Link transfers/vehicles)","desc":"- Configuration of transport management within the purchasing flow, including th","cat":"Gap","moscow":"Define need","scope":"In Scope"},{"id":170,"wi":"Transport ordering","domain":"Purchasing","feature":"Custom application","desc":"","cat":"","moscow":"","scope":""},{"id":171,"wi":"Transport ordering","domain":"Purchasing","feature":"Pick up & Drop off location","desc":"- Configuration of pick-up and drop-off address fields on the transfer (incoming","cat":"","moscow":"","scope":""},{"id":172,"wi":"Transport ordering","domain":"Purchasing","feature":"Source location","desc":"","cat":"","moscow":"","scope":""},{"id":173,"wi":"Transport ordering","domain":"Purchasing","feature":"Seller / buyer managed on PO","desc":"","cat":"","moscow":"","scope":""},{"id":174,"wi":"Transport ordering","domain":"Purchasing","feature":"Incoterms","desc":"- Configuration of Incoterms on purchase orders to define the point at which ris","cat":"","moscow":"","scope":""},{"id":175,"wi":"Transport ordering","domain":"Purchasing","feature":"HS Codes","desc":"- Configuration of Harmonised System (HS) codes on products in Odoo to support c","cat":"Fit","moscow":"Must have","scope":""},{"id":176,"wi":"Transport ordering","domain":"Purchasing","feature":"Country groups","desc":"- Grouping transport per country group (BE, NON BE, EU,\u2026)","cat":"","moscow":"","scope":""},{"id":177,"wi":"Transport ordering","domain":"Purchasing","feature":"Link batch to PO's","desc":"- Transport is managed from transport legs, substructure from a transfer. Each l","cat":"Gap","moscow":"Define need","scope":""},{"id":178,"wi":"Receiving","domain":"Purchasing","feature":"Drop- shipping","desc":"- Configuration of the drop- shipping route in Odoo where goods are shipped dire","cat":"Fit","moscow":"Must have","scope":"Out of Scope"},{"id":179,"wi":"Billing","domain":"Purchasing","feature":"2- way matching (PO matching)","desc":"- Configuration of 2- way matching in Odoo where vendor bills are matched agains","cat":"Fit","moscow":"Define need","scope":""},{"id":180,"wi":"Billing","domain":"Purchasing","feature":"3- way matching","desc":"- Configuration of 3- way matching in Odoo where vendor bills are validated agai","cat":"Fit","moscow":"No need","scope":""},{"id":181,"wi":"Billing","domain":"Purchasing","feature":"Vendor bill creation","desc":"- Configuration of the vendor bill creation flow from purchase orders and receip","cat":"Fit","moscow":"No need","scope":"In Scope"},{"id":182,"wi":"Billing","domain":"Purchasing","feature":"Price differences","desc":"- Configuration of the handling of price differences between purchase orders and","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":183,"wi":"Billing","domain":"Purchasing","feature":"Landed costs","desc":"- Configuration of the landed costs module in Odoo to distribute additional purc","cat":"Gap","moscow":"No need","scope":"Out of Scope"},{"id":184,"wi":"Billing","domain":"Purchasing","feature":"Vendor returns","desc":"- Configuration of the vendor return flow in Odoo for sending goods back to a su","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":185,"wi":"Planning","domain":"Purchasing","feature":"Make- to- order","desc":"- Configuration of the make- to- order procurement route in Odoo where a purchas","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":186,"wi":"Planning","domain":"Purchasing","feature":"Purchase from MRP","desc":"- Configuration of the integration between the MRP module and purchasing in Odoo","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":187,"wi":"Reporting","domain":"Purchasing","feature":"Supplier performance","desc":"- Configuration of supplier performance reporting in Odoo to track on- time deli","cat":"Fit","moscow":"Define need","scope":""},{"id":188,"wi":"Reporting","domain":"Purchasing","feature":"Open purchase orders","desc":"- Configuration of the open purchase orders report in Odoo to give purchasing an","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":189,"wi":"Core Setup","domain":"Sales","feature":"Pricelists","desc":"- Configuration of sales pricelists in Odoo to manage customer- specific pricing","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":190,"wi":"Core Setup","domain":"Sales","feature":"Discounts","desc":"- Configuration of discount management in Odoo for sales orders and quotations, ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":191,"wi":"Core Setup","domain":"Sales","feature":"Sales teams","desc":"- Configuration of sales teams in Odoo to group salespeople by region, product l","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":192,"wi":"Core Setup","domain":"Sales","feature":"Payment terms","desc":"- Configuration of payment terms in Odoo for sales transactions, including stand","cat":"Fit","moscow":"Could have","scope":"Out of Scope"},{"id":193,"wi":"Quotation","domain":"Sales","feature":"Quotation creation","desc":"- Setup of the quotation creation flow in Odoo including standard quotation layo","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":194,"wi":"Quotation","domain":"Sales","feature":"Quotation templates","desc":"- Configuration of quotation templates in Odoo for recurring sales scenarios_x00","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":195,"wi":"Quotation","domain":"Sales","feature":"Product configurator","desc":"- Configuration of the product configurator in Odoo to guide salespeople through","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":196,"wi":"Quotation","domain":"Sales","feature":"Approval workflows","desc":"- Configuration of quotation approval workflows in Odoo for quotes above a certa","cat":"Gap","moscow":"Define need","scope":"Out of Scope"},{"id":197,"wi":"Quotation","domain":"Sales","feature":"eSignature","desc":"- Configuration of the eSignature functionality in Odoo to allow customers to di","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":198,"wi":"Orders","domain":"Sales","feature":"Sales order confirmation","desc":"- Configuration of the sales order confirmation flow in Odoo, including stock re","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":199,"wi":"Orders","domain":"Sales","feature":"Zero lines","desc":"- Configuration of zero- value lines on sales orders for non- billable items or ","cat":"Gap","moscow":"Must have","scope":"In Scope"},{"id":200,"wi":"Orders","domain":"Sales","feature":"Order modifications","desc":"- Configuration of the flow for modifying confirmed sales orders in Odoo, includ","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":201,"wi":"Orders","domain":"Sales","feature":"Order cancellations","desc":"- Configuration of the sales order cancellation flow in Odoo, including stock de","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":202,"wi":"Fulfilment","domain":"Sales","feature":"Delivery orders","desc":"- Configuration of the delivery order flow from confirmed sales orders in Odoo_x","cat":"Fit","moscow":"Define need","scope":""},{"id":203,"wi":"Fulfilment","domain":"Sales","feature":"Partial deliveries","desc":"- Configuration of the partial delivery flow in Odoo for situations where not al","cat":"Fit","moscow":"Define need","scope":""},{"id":204,"wi":"Fulfilment","domain":"Sales","feature":"Backorders","desc":"- Configuration of the backorder flow in Odoo for sales orders where delivery is","cat":"Fit","moscow":"Define need","scope":""},{"id":205,"wi":"Fulfilment","domain":"Sales","feature":"Drop- shipping","desc":"- Configuration of the drop- shipping fulfilment route in Odoo where goods are s","cat":"Fit","moscow":"Define need","scope":""},{"id":206,"wi":"Fulfilment","domain":"Sales","feature":"Shipping integration","desc":"- Configuration of carrier integration in Odoo for generating shipping labels, t","cat":"Fit","moscow":"Define need","scope":""},{"id":207,"wi":"Invoicing","domain":"Sales","feature":"Invoice creation","desc":"- Configuration of the customer invoice creation flow from sales orders and deli","cat":"Fit","moscow":"Define need","scope":"In Scope"},{"id":208,"wi":"Invoicing","domain":"Sales","feature":"Invoice policy","desc":"- Configuration of invoice policies in Odoo to define when a customer is invoice","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":209,"wi":"Invoicing","domain":"Sales","feature":"Down payments","desc":"- Configuration of the down payment flow in Odoo to collect partial payment from","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":210,"wi":"Invoicing","domain":"Sales","feature":"Credit notes","desc":"- Configuration of the credit note flow in Odoo for sales returns, billing corre","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":211,"wi":"Invoicing","domain":"Sales","feature":"Subscription billing","desc":"- Configuration of recurring subscription billing in Odoo for products or servic","cat":"Fit","moscow":"No need","scope":"Out of Scope"},{"id":212,"wi":"Commission","domain":"Sales","feature":"Broker's commission","desc":"- Configuration of broker commission tracking in Odoo for third- party intermedi","cat":"Gap","moscow":"Must have","scope":"Out of Scope"},{"id":213,"wi":"Commission","domain":"Sales","feature":"Default commission","desc":"- Configuration of default sales commission rules in Odoo for internal salespeop","cat":"Fit","moscow":"Define need","scope":"Out of Scope"},{"id":214,"wi":"Returns","domain":"Sales","feature":"Returns (RMA)","desc":"- Configuration of the return merchandise authorisation flow in Odoo for handlin","cat":"","moscow":"Define need","scope":""},{"id":215,"wi":"Returns","domain":"Sales","feature":"Warranty handling","desc":"- Configuration of the warranty handling flow in Odoo for products returned unde","cat":"","moscow":"Define need","scope":""},{"id":216,"wi":"Reporting","domain":"Sales","feature":"Sales reporting","desc":"- Configuration and use of standard sales reports in Odoo including revenue by s","cat":"","moscow":"Define need","scope":""},{"id":217,"wi":"Reporting","domain":"Sales","feature":"Margin analysis","desc":"- Configuration of margin analysis reporting in Odoo to show the gross margin pe","cat":"","moscow":"Define need","scope":""},{"id":218,"wi":"Reporting","domain":"Sales","feature":"Forecasting","desc":"- Configuration of sales forecasting in Odoo based on pipeline opportunities and","cat":"","moscow":"Define need","scope":""},{"id":219,"wi":"User management","domain":"Users & Security","feature":"List of users","desc":"- Collection and validation of the full list of Odoo users across all entities a","cat":"Fit","moscow":"Must have","scope":"In Scope"},{"id":220,"wi":"User management","domain":"Users & Security","feature":"Access right per user","desc":"- Configuration of access rights in Odoo per user based on their role and the pr","cat":"Gap","moscow":"Must have","scope":"In Scope"}]
+;
+const pm = {};
+RAW.forEach(it=>{ pm[it.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:''}; });
+
+const STATUS_LABELS={todo:'To do',progress:'In uitvoering',review:'Review',done:'Afgerond',blocked:'Geblokkeerd'};
+const INTERNAL_STATUS_LABELS={'':"–",'in_analyse':'In analyse','in_ontwikkeling':'In ontwikkeling','klaar_intern':'Klaar intern','wacht_klant':'Wacht op klant','risico':'Risico'};
+let currentUser=null, currentTab='budget';
+let fDomain='',fCat='',fMoscow='',fScope='',fStatus='',fTPX='',fClient='';
+let timeEntries=[];
+let tsWeekOffset=0;
+
+// ── SIGN-OFF STATE ────────────────────────────────────────────────────────────
+const signoffs={};
+RAW.forEach(it=>{ signoffs[it.id]={status:'pending',signedBy:'',signedAt:'',remark:''}; });
+
+let milestones=[
+  {id:'ms1',name:'Sign-off requirement list',targetDate:'',status:'open',note:''},
+  {id:'ms2',name:'Sign-off individuele work items',targetDate:'',status:'open',note:''},
+  {id:'ms3',name:'Go-live',targetDate:'',status:'open',note:''},
+];
+let soFilterDomain='',soFilterStatus='',soFilterSearch='';
+
+// ── RATE HELPERS ─────────────────────────────────────────────────────────────
+function getRoleRate(roleName){
+  const rr=config.roleRates.find(r=>r.role===roleName);
+  return rr?rr.rate:125;
+}
+function getUserRate(userName){
+  const u=users.find(x=>x.name===userName);
+  if(!u) return getRoleRate('Consultant');
+  if(u.rateOverride) return u.rateOverride;
+  return getRoleRate(u.tpxRole||'Consultant');
+}
+function getItemRate(itemId){
+  const assignee=pm[itemId].tpxAssignee;
+  if(assignee) return getUserRate(assignee);
+  // fallback: average of all TPX users
+  const tpxUsers=users.filter(u=>u.role!=='client');
+  if(!tpxUsers.length) return 125;
+  return Math.round(tpxUsers.reduce((s,u)=>s+(u.rateOverride||getRoleRate(u.tpxRole||'Consultant')),0)/tpxUsers.length);
+}
+function getSizeRange(label){
+  const s=config.sizes.find(x=>x.label===label);
+  return s?[s.min,s.max]:[0,0];
+}
+function getSizeMid(label){
+  const r=getSizeRange(label);
+  return (r[0]+r[1])/2;
+}
+function hpd(){return 8;}
+
+// ── BUDGET STATUS ─────────────────────────────────────────────────────────────
+function getBudgetStatus(id){
+  const p=pm[id];
+  if(p.actualHours===null||p.actualHours===''||!p.size||p.size==='skip') return 'none';
+  const actual=parseFloat(p.actualHours)||0;
+  const hi=getSizeRange(p.size)[1];
+  const mid=getSizeMid(p.size);
+  if(actual>hi) return 'over';
+  if(actual>mid) return 'warn';
+  return 'ok';
+}
+function getBudgetPill(id){
+  const p=pm[id];
+  const actual=parseFloat(p.actualHours)||0;
+  if(p.actualHours===null||p.actualHours==='') return `<span class="budget-pill bp-none">—</span>`;
+  if(!p.size||p.size==='skip') return `<span class="budget-pill bp-none">${actual}u</span>`;
+  const hi=getSizeRange(p.size)[1];
+  const mid=getSizeMid(p.size);
+  const st=getBudgetStatus(id);
+  if(st==='over')  return `<span class="budget-pill bp-over">+${(actual-hi).toFixed(1)}u over</span>`;
+  if(st==='warn')  return `<span class="budget-pill bp-warn">${actual}/${hi}u</span>`;
+  return `<span class="budget-pill bp-ok">${actual}/${hi}u</span>`;
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pin=document.getElementById('loginPin').value.trim();
+  const user=users.find(u=>u.email.toLowerCase()===email&&u.pin===pin);
+  if(!user){document.getElementById('loginError').textContent='Onbekend e-mailadres of onjuiste PIN.';document.getElementById('loginPin').value='';return;}
+  currentUser=user;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  document.getElementById('userChip').textContent=user.name+' · '+(user.role==='pm'?'Project Manager':user.role==='tpx'?'TPX':'Klant');
+  document.getElementById('appTitle').textContent=config.projectName;
+  document.getElementById('appSub').innerHTML='<span class="sync-dot" title="Live sync actief"></span>'+config.clientName+' × TPX · Budget · Planning · Status';
+  applyRoleUI();
+  initFilters();
+  showLoading(true);
+  loadFromSupabase().then(()=>{ showLoading(false); renderAll(); });
+}
+function doLogout(){
+  currentUser=null;
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('appShell').style.display='none';
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPin').value='';
+  document.getElementById('loginError').textContent='';
+  document.getElementById('loginTitle').textContent=config.projectName;
+  document.getElementById('loginSub').textContent=config.loginSub;
+  document.getElementById('loginFooter').textContent='Contacteer TPX voor toegang · '+config.contactEmail;
+}
+function applyRoleUI(){
+  const isTpx=currentUser.role!=='client';
+  const isPM=currentUser.role==='pm';
+  document.querySelectorAll('.tpx-only').forEach(el=>el.style.display=isTpx?'':' none');
+  document.querySelectorAll('.pm-only').forEach(el=>el.style.display=isPM?'':'none');
+  if(!isTpx){
+    document.getElementById('tabBudget').style.display='none';
+    document.getElementById('tabDash').style.display='none';
+    document.getElementById('tabTS').style.display='none';
+    switchTab('pm',document.getElementById('tabPM'));
+  }
+}
+
+// ── TAB ───────────────────────────────────────────────────────────────────────
+function switchTab(tab,el){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('budgetSection').style.display=tab==='budget'?'block':'none';
+  document.getElementById('pmSection').classList.toggle('section-hidden',tab!=='pm');
+  document.getElementById('dashSection').classList.toggle('section-hidden',tab!=='dashboard');
+  document.getElementById('tsSection').classList.toggle('section-hidden',tab!=='timesheet');
+  document.getElementById('soSection').classList.toggle('section-hidden',tab!=='signoff');
+  document.getElementById('pmControls').style.display=tab==='pm'?'flex':'none';
+  document.getElementById('mainContent').style.display=(tab==='dashboard'||tab==='timesheet'||tab==='signoff')?'none':'block';
+  if(tab==='dashboard') renderDashboard();
+  else if(tab==='timesheet') renderTimesheet();
+  else if(tab==='signoff') renderSignoff();
+  else renderAll();
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+function getFiltered(){
+  const search=(document.getElementById('fSearch')||{value:''}).value.toLowerCase();
+  const onlyOver=(document.getElementById('fOverBudget')||{checked:false}).checked;
+  return RAW.filter(it=>{
+    if(fDomain&&it.domain!==fDomain) return false;
+    if(fCat&&it.cat!==fCat) return false;
+    if(fMoscow&&it.moscow!==fMoscow) return false;
+    if(fScope&&it.scope!==fScope) return false;
+    if(fStatus&&pm[it.id].status!==fStatus) return false;
+    if(fTPX&&pm[it.id].tpxAssignee!==fTPX) return false;
+    if(fClient&&pm[it.id].clientAssignee!==fClient) return false;
+    if(search&&!it.feature.toLowerCase().includes(search)&&!it.wi.toLowerCase().includes(search)) return false;
+    if(onlyOver&&getBudgetStatus(it.id)!=='over') return false;
+    return true;
+  });
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updateStats(){
+  const f=getFiltered();
+  const sized=f.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip').length;
+  const done=f.filter(it=>pm[it.id].status==='done').length;
+  const inprog=f.filter(it=>pm[it.id].status==='progress').length;
+  const blocked=f.filter(it=>pm[it.id].status==='blocked').length;
+  const over=f.filter(it=>getBudgetStatus(it.id)==='over').length;
+  const isTpx=currentUser?.role!=='client';
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat"><div class="s-label">Getoond</div><div class="s-val">${f.length}</div><div class="s-sub">van ${RAW.length}</div></div>
+    ${isTpx?`<div class="stat"><div class="s-label">Ingeschat</div><div class="s-val">${sized}</div><div class="s-sub">${f.length?Math.round(sized/f.length*100):0}%</div></div>`:''}
+    <div class="stat"><div class="s-label">In uitvoering</div><div class="s-val" style="color:#F59E0B">${inprog}</div><div class="s-sub">actief</div></div>
+    <div class="stat"><div class="s-label">Afgerond</div><div class="s-val" style="color:#10B981">${done}</div><div class="s-sub">${f.length?Math.round(done/f.length*100):0}%</div></div>
+    <div class="stat"><div class="s-label">Geblokkeerd</div><div class="s-val" style="color:#EF4444">${blocked}</div><div class="s-sub">aandacht</div></div>
+    ${isTpx?`<div class="stat"><div class="s-label">Over budget</div><div class="s-val" style="color:${over>0?'#EF4444':'#10B981'}">${over}</div><div class="s-sub">items</div></div>`:''}
+  `;
+  if(isTpx){
+    const pct=RAW.filter(it=>pm[it.id].size).length/RAW.length*100;
+    const pf=document.getElementById('progFill');if(pf)pf.style.width=pct+'%';
+    const sc=document.getElementById('sizedCount');if(sc)sc.textContent=`${RAW.filter(it=>pm[it.id].size).length} / ${RAW.length} ingeschat`;
+  }
+}
+
+// ── BUDGET OVERVIEW ───────────────────────────────────────────────────────────
+function updateBudget(){
+  const si=RAW.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip');
+  let lo=0,hi=0,mid=0,actualCost=0,actualH=0,actualCount=0;
+  si.forEach(it=>{
+    const rng=getSizeRange(pm[it.id].size);
+    const r=getItemRate(it.id);
+    lo+=rng[0]*r; hi+=rng[1]*r; mid+=getSizeMid(pm[it.id].size)*r;
+    if(pm[it.id].actualHours!==null&&pm[it.id].actualHours!==''){
+      const ah=parseFloat(pm[it.id].actualHours)||0;
+      actualCost+=ah*r; actualH+=ah; actualCount++;
+    }
+  });
+  const fmt=v=>'€'+Math.round(v).toLocaleString('nl-BE');
+  const days=v=>Math.round(v/hpd())+'d';
+  const over=RAW.filter(it=>getBudgetStatus(it.id)==='over').length;
+  const warn=RAW.filter(it=>getBudgetStatus(it.id)==='warn').length;
+  let cards=`
+    <div class="b-card"><div class="bl">Laag (min)</div><div class="bv">${fmt(lo)}</div><div class="bd">${days(lo/125)} approx</div></div>
+    <div class="b-card"><div class="bl">Midden</div><div class="bv" style="color:#1E6FD9">${fmt(mid)}</div><div class="bd">op basis van rollen</div></div>
+    <div class="b-card"><div class="bl">Hoog (max)</div><div class="bv">${fmt(hi)}</div><div class="bd">worst case</div></div>
+  `;
+  if(actualCount>0) cards+=`<div class="b-card"><div class="bl">Besteed (actuals)</div><div class="bv" style="color:${actualCost>hi?'#EF4444':actualCost>mid?'#F59E0B':'#10B981'}">${fmt(actualCost)}</div><div class="bd">${Math.round(actualH)}u · ${actualCount} items</div></div>`;
+  if(over>0) cards+=`<div class="b-card"><div class="bl">Over budget</div><div class="bv" style="color:#EF4444">${over}</div><div class="bd">${warn} in gevarenzone</div></div>`;
+  cards+=`<div class="b-card"><div class="bl">Ingeschat</div><div class="bv">${si.length}</div><div class="bd">van ${RAW.length} items</div></div>`;
+  document.getElementById('budgetGrid').innerHTML=cards;
+}
+
+// ── OVER-BUDGET ALERT ─────────────────────────────────────────────────────────
+function updateOverBudgetAlert(){
+  const over=RAW.filter(it=>getBudgetStatus(it.id)==='over');
+  const el=document.getElementById('overBudgetAlert');if(!el)return;
+  if(!over.length){el.style.display='none';return;}
+  const totalOver=over.reduce((s,it)=>{const a=parseFloat(pm[it.id].actualHours)||0;return s+(a-getSizeRange(pm[it.id].size)[1]);},0);
+  el.style.display='block';
+  el.innerHTML=`<div class="alert-bar"><div><div class="ab-title">Over budget — ${over.length} item${over.length>1?'s':''}</div><div class="ab-sub">${over.map(it=>`${it.feature} (+${((parseFloat(pm[it.id].actualHours)||0)-getSizeRange(pm[it.id].size)[1]).toFixed(1)}u)`).join(' · ')}</div></div><div class="ab-count">+${totalOver.toFixed(1)}u</div></div>`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll(){
+  updateStats();
+  if(currentTab==='budget'&&currentUser?.role!=='client') updateBudget();
+  if(currentTab==='pm') updateOverBudgetAlert();
+  const filtered=getFiltered();
+  const byDomain={};
+  filtered.forEach(it=>{(byDomain[it.domain]=byDomain[it.domain]||[]).push(it);});
+  const c=document.getElementById('mainContent');c.innerHTML='';
+  if(!filtered.length){c.innerHTML='<div class="no-items">Geen items gevonden.</div>';return;}
+
+  const isTpx=currentUser?.role!=='client';
+  if(currentTab==='pm'){
+    const hdr=document.createElement('div');
+    hdr.className='pm-header-row';
+    hdr.style.gridTemplateColumns=isTpx?'1fr 110px 110px 110px 80px 80px 100px':'1fr 130px 130px 130px';
+    hdr.innerHTML=`<span>Feature</span><span>TPX</span><span>Klant</span><span>Status</span>${isTpx?'<span>Grootte</span><span>Est (u)</span><span>Act (u)</span>':''}`;
+    c.appendChild(hdr);
+  }
+
+  config.domains.forEach(dom=>{
+    if(!byDomain[dom]) return;
+    const items=byDomain[dom];
+    const sc=items.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip').length;
+    const gc=items.filter(it=>it.cat==='Gap').length;
+    const doneC=items.filter(it=>pm[it.id].status==='done').length;
+    const overC=items.filter(it=>getBudgetStatus(it.id)==='over').length;
+    const isOpen=!!(fDomain||fStatus||fTPX||fClient||(document.getElementById('fSearch')||{value:''}).value||(document.getElementById('fOverBudget')||{checked:false}).checked);
+
+    let bulkHtml='';
+    if(currentTab==='budget'&&isTpx){
+      bulkHtml=`<div class="bulk-btns">${config.sizes.map(s=>`<button class="bbtn" onclick="event.stopPropagation();bulkDomain('${dom}','${s.label}')">${s.label}</button>`).join('')}<button class="bbtn" style="border-color:#1E6FD9;color:#1E6FD9" onclick="event.stopPropagation();addInlineBudgetItem('${dom}')">+ Item</button></div>`;
+    } else {
+      bulkHtml=`<div class="bulk-btns"><button class="bbtn" onclick="event.stopPropagation();bulkStatus('${dom}','todo')">To do</button><button class="bbtn" onclick="event.stopPropagation();bulkStatus('${dom}','progress')">Actief</button><button class="bbtn" onclick="event.stopPropagation();bulkStatus('${dom}','done')">Klaar</button></div>`;
+    }
+    const overBadge=overC>0?`<span style="font-size:10px;font-weight:600;color:#EF4444;padding:2px 6px;background:#FCEBEB;border-radius:4px">${overC} over budget</span>`:'';
+    const meta=currentTab==='budget'?`<span class="dh-meta">${sc}/${items.length} geschat</span>${overBadge}`:`<span class="dh-meta">${doneC}/${items.length} klaar</span>${overBadge}`;
+
+    const div=document.createElement('div');
+    div.className='domain-block';
+    div.innerHTML=`<div class="domain-header" onclick="toggleDom(this)">
+      <div class="dh-left"><span class="dh-arrow ${isOpen?'open':''}">▼</span>${dom}<span style="font-size:11px;color:#8a9dbb;font-weight:400">${items.length} items · ${gc} gap</span></div>
+      <div class="dh-right">${meta}${bulkHtml}</div>
+    </div>
+    <div class="items-list ${isOpen?'open':''}">${items.map(it=>currentTab==='budget'?renderBudgetItem(it):renderPMItem(it)).join('')}</div>`;
+    c.appendChild(div);
+  });
+  // items in domains not in config.domains
+  const extra=filtered.filter(it=>!config.domains.includes(it.domain));
+  if(extra.length){
+    const otherByDomain={};
+    extra.forEach(it=>{(otherByDomain[it.domain]=otherByDomain[it.domain]||[]).push(it);});
+    Object.keys(otherByDomain).forEach(dom=>{
+      const items=otherByDomain[dom];
+      const div=document.createElement('div');div.className='domain-block';
+      div.innerHTML=`<div class="domain-header" onclick="toggleDom(this)"><div class="dh-left"><span class="dh-arrow">▼</span>${dom}</div></div><div class="items-list">${items.map(it=>currentTab==='budget'?renderBudgetItem(it):renderPMItem(it)).join('')}</div>`;
+      c.appendChild(div);
+    });
+  }
+}
+
+function renderBudgetItem(it){
+  const p=pm[it.id];
+  const s=p.size||'';
+  const cb=it.cat==='Gap'?'bg':it.cat==='Fit'?'bf':'bn';
+  const mb=it.moscow==='Must have'?'bm':it.moscow==='Should have'?'bs':'bn';
+  const isTpx=currentUser?.role!=='client';
+  const bs=getBudgetStatus(it.id);
+  const bdr=bs==='over'?'border-color:#EF4444;':bs==='warn'?'border-color:#F59E0B;':'';
+  const rate=getItemRate(it.id);
+  const sizeHintParts=s&&s!=='skip'?[`${getSizeRange(s)[0]}–${getSizeRange(s)[1]}u`,`€${Math.round(getSizeMid(s)*rate).toLocaleString('nl-BE')}`]:[];
+  const hasAC=p.acceptanceCriteria&&p.acceptanceCriteria.trim().length>0;
+  const cdFmt=p.createdDate?`<span style="font-size:10px;color:#8a9dbb">+${p.createdDate}</span>`:'';
+  const rdFmt=p.resolvedDate?`<span style="font-size:10px;color:#10B981">✓${p.resolvedDate}</span>`:'';
+
+  return `<div class="item-row" data-id="${it.id}" style="${bdr}">
+    <div class="item-info">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div class="item-feat" title="${it.feature}">${it.feature}</div>
+        ${cdFmt}${rdFmt}
+        ${isTpx?`<button class="bi-toggle" onclick="toggleBIEdit(${it.id},this)">✎</button>`:''}
+      </div>
+      <div class="item-meta-row">
+        <span class="badge ${cb}">${it.cat||'?'}</span>
+        <span class="badge ${mb}">${it.moscow||'—'}</span>
+        ${sizeHintParts.length?`<span style="font-size:10px;color:#8a9dbb">${sizeHintParts.join(' · ')}</span>`:''}
+        <span class="item-desc">${(it.desc||'').substring(0,55)}</span>
+        ${hasAC?`<span class="ac-toggle" style="font-size:9px" onclick="event.stopPropagation();toggleAC(${it.id},this)">✓ AC</span>`:''}
+      </div>
+      ${hasAC?`<div class="ac-panel" id="ac-${it.id}"><textarea onchange="setAC(${it.id},this.value)">${p.acceptanceCriteria||''}</textarea></div>`:''}
+      ${isTpx?`<div class="bi-edit-panel" id="bi-${it.id}">
+        <div class="bi-edit-grid">
+          <div class="bi-field"><label>Work item groep</label><input class="bi-f-wi" value="${escHtml(it.wi||'')}"></div>
+          <div class="bi-field"><label>Feature naam</label><input class="bi-f-feat" value="${escHtml(it.feature||'')}"></div>
+          <div class="bi-field"><label>Domein</label><select class="bi-f-domain">${config.domains.map(d=>`<option value="${d}" ${it.domain===d?'selected':''}>${d}</option>`).join('')}</select></div>
+        </div>
+        <div class="bi-edit-grid">
+          <div class="bi-field"><label>Categorie</label><select class="bi-f-cat"><option value="Gap" ${it.cat==='Gap'?'selected':''}>Gap</option><option value="Fit" ${it.cat==='Fit'?'selected':''}>Fit</option><option value="" ${!it.cat?'selected':''}>—</option></select></div>
+          <div class="bi-field"><label>MoSCoW</label><select class="bi-f-moscow">${['Must have','Should have','Could have','Define need','No need',"Won't have"].map(v=>`<option value="${v}" ${it.moscow===v?'selected':''}>${v}</option>`).join('')}</select></div>
+          <div class="bi-field"><label>Scope</label><select class="bi-f-scope"><option value="In Scope" ${it.scope==='In Scope'?'selected':''}>In Scope</option><option value="Out of Scope" ${it.scope==='Out of Scope'?'selected':''}>Out of Scope</option><option value="" ${!it.scope?'selected':''}>—</option></select></div>
+        </div>
+        <div class="bi-edit-grid-wide">
+          <div class="bi-field"><label>Beschrijving</label><textarea class="bi-f-desc">${escHtml(it.desc||'')}</textarea></div>
+          <div class="bi-field"><label>Acceptatiecriteria (zichtbaar voor klant)</label><textarea class="bi-f-ac">${escHtml(p.acceptanceCriteria||'')}</textarea></div>
+        </div>
+        <div class="date-row">
+          <label>Aangemaakt</label><input type="date" class="bi-f-created" value="${p.createdDate||''}">
+          <label>Opgelost</label><input type="date" class="bi-f-resolved" value="${p.resolvedDate||''}">
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="bi-save-btn" onclick="saveBIEdit(${it.id},this)">Opslaan</button>
+          <button class="bi-cancel-btn" onclick="closeBIEdit(${it.id})">Annuleren</button>
+          <button class="bi-cancel-btn" style="color:#EF4444;border-color:#FCA5A5" onclick="deleteInlineItem(${it.id})">Verwijderen</button>
+        </div>
+      </div>`:'' }
+    </div>
+    ${isTpx?`
+    <div class="size-btns">
+      ${config.sizes.map(sz=>`<button class="sbtn${s===sz.label?' a'+sz.label:''}\" data-sz="${sz.label}" onclick="setSize(${it.id},'${sz.label}')">${sz.label}</button>`).join('')}
+      <button class="sbtn${s==='skip'?' askip':''}" data-sz="skip" onclick="setSize(${it.id},'skip')">—</button>
+    </div>
+    <div class="actual-wrap">
+      <label>Actuals</label>
+      <input class="actual-input" type="number" min="0" step="0.5" value="${p.actualHours!==null?p.actualHours:''}" placeholder="0u" onchange="setActual(${it.id},this.value)">
+    </div>
+    ${getBudgetPill(it.id)}`:'' }
+  </div>`;
+}
+
+function renderPMItem(it){
+  const p=pm[it.id];
+  const cb=it.cat==='Gap'?'bg':it.cat==='Fit'?'bf':'bn';
+  const tpxOpts=team.tpx.map(m=>`<option value="${m}" ${p.tpxAssignee===m?'selected':''}>${m}</option>`).join('');
+  const clientOpts=team.client.map(m=>`<option value="${m}" ${p.clientAssignee===m?'selected':''}>${m}</option>`).join('');
+  const statusOpts=Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${p.status===v?'selected':''}>${l}</option>`).join('');
+  const sizeOpts=['','skip',...config.sizes.map(s=>s.label)].map(v=>`<option value="${v}" ${p.size===v?'selected':''}>${v||'—'}</option>`).join('');
+  const isTpx=currentUser?.role!=='client';
+  const bs=getBudgetStatus(it.id);
+  const actualClass=bs==='over'?' over':bs==='warn'?' warn':'';
+  const bdr=bs==='over'?'border-left:3px solid #EF4444;padding-left:9px;':bs==='warn'?'border-left:3px solid #F59E0B;padding-left:9px;':'';
+  const gridCols=isTpx?'1fr 110px 110px 110px 80px 80px 100px':'1fr 130px 130px 130px';
+
+  // deviation pill
+  let devPill='';
+  if(isTpx&&p.estimatedHours!==null&&p.estimatedHours!==''&&p.actualHours!==null&&p.actualHours!==''){
+    const est=parseFloat(p.estimatedHours)||0;
+    const act=parseFloat(p.actualHours)||0;
+    const diff=act-est;
+    if(diff>0) devPill=`<span class="dev-pill dev-over">+${diff.toFixed(1)}u</span>`;
+    else if(diff<-0.5) devPill=`<span class="dev-pill dev-ok">${diff.toFixed(1)}u</span>`;
+    else devPill=`<span class="dev-pill dev-ok">op schema</span>`;
+  }
+
+  // dates
+  const cdFmt=p.createdDate?`<span style="font-size:10px;color:#8a9dbb" title="Aangemaakt">+${p.createdDate}</span>`:'';
+  const rdFmt=p.resolvedDate?`<span style="font-size:10px;color:#10B981" title="Opgelost">✓${p.resolvedDate}</span>`:'';
+
+  // internal notes panel (TPX only)
+  const hasNote=p.internalNotes&&p.internalNotes.trim().length>0;
+  const intStatusOpts=Object.entries(INTERNAL_STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${p.internalStatus===v?'selected':''}>${l}</option>`).join('');
+  const internalBlock=isTpx?`
+    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+      <button class="int-toggle" onclick="toggleInternal(${it.id},this)">${hasNote?'📝 Intern':'+ Intern'}</button>
+      ${hasNote?`<span class="int-note-preview">${p.internalNotes.substring(0,60)}</span>`:''}
+      ${p.internalStatus?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#FEF3E2;color:#D97706;font-weight:600">${INTERNAL_STATUS_LABELS[p.internalStatus]||''}</span>`:''}
+    </div>
+    <div class="internal-panel" id="int-${it.id}">
+      <div class="int-status-row">
+        <span class="int-status-label">Intern status:</span>
+        <select style="font-size:11px;padding:2px 6px;border:1px solid #FCD34D;border-radius:5px;background:#FFFDF0;color:#1a1a2e" onchange="setInternal(${it.id},'internalStatus',this.value)">${intStatusOpts}</select>
+      </div>
+      <textarea placeholder="Interne notities (enkel zichtbaar voor TPX)..." onchange="setInternal(${it.id},'internalNotes',this.value)" style="margin-top:6px">${p.internalNotes||''}</textarea>
+    </div>`:'';
+
+  // acceptance criteria panel (visible to client too)
+  const hasAC=p.acceptanceCriteria&&p.acceptanceCriteria.trim().length>0;
+  const acBlock=`
+    <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap">
+      <button class="ac-toggle" onclick="toggleAC(${it.id},this)">${hasAC?'✓ Acceptatiecriteria':'+ Acceptatiecriteria'}</button>
+      ${hasAC?`<span class="ac-preview">${p.acceptanceCriteria.substring(0,60)}</span>`:''}
+    </div>
+    <div class="ac-panel" id="ac-pm-${it.id}">
+      <textarea placeholder="Wanneer is dit item aanvaard door de klant?..." onchange="setAC(${it.id},this.value)">${p.acceptanceCriteria||''}</textarea>
+      ${isTpx?`<div class="date-row">
+        <label>Aangemaakt</label><input type="date" value="${p.createdDate||''}" onchange="setField(${it.id},'createdDate',this.value)">
+        <label>Opgelost</label><input type="date" value="${p.resolvedDate||''}" onchange="setField(${it.id},'resolvedDate',this.value)">
+      </div>`:''}
+    </div>`;
+
+  return `<div class="pm-row" data-id="${it.id}" style="grid-template-columns:${gridCols};${bdr}">
+    <div>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <div class="item-feat" title="${it.feature}">${it.feature}</div>
+        ${cdFmt}${rdFmt}
+      </div>
+      <div class="item-meta-row" style="margin-top:2px">
+        <span class="badge ${cb}">${it.cat||'?'}</span>
+        <span style="font-size:10px;color:#8a9dbb">${it.domain}</span>
+        ${isTpx?getBudgetPill(it.id):''}
+        ${devPill}
+      </div>
+      ${internalBlock}
+      ${acBlock}
+    </div>
+    <select class="pm-select" onchange="setPM(${it.id},'tpxAssignee',this.value)"><option value="">—</option>${tpxOpts}</select>
+    <select class="pm-select" onchange="setPM(${it.id},'clientAssignee',this.value)"><option value="">—</option>${clientOpts}</select>
+    <select class="pm-select" onchange="setPM(${it.id},'status',this.value)">${statusOpts}</select>
+    ${isTpx?`<select class="pm-select" onchange="setPM(${it.id},'size',this.value)">${sizeOpts}</select>
+    <input type="number" class="est-input${p.size&&p.size!=='skip'&&p.estimatedHours!==null?' est-auto':''}" min="0" step="0.5" value="${p.estimatedHours!==null&&p.estimatedHours!==''?p.estimatedHours:''}" placeholder="Est" title="${p.size&&p.size!=='skip'?'Auto vanuit sizing — overschrijf indien nodig':'Ingeschatte uren'}" onchange="setEstimate(${it.id},this.value)">
+    <input type="number" class="pm-actual${actualClass}" min="0" step="0.5" value="${p.actualHours!==null&&p.actualHours!==''?p.actualHours:''}" placeholder="Act" onchange="setActual(${it.id},this.value)">`:'' }
+  </div>`;
+}
+
+
+// ── SETTERS ─────────────────────────────────────────────────────────────────
+// Acceptance criteria
+function setAC(id,val){
+  pm[id].acceptanceCriteria=val;
+  saveToSupabase(id);
+}
+function toggleAC(id,btn){
+  const panels=[document.getElementById('ac-'+id),document.getElementById('ac-pm-'+id)];
+  panels.forEach(p=>{if(p){const o=p.classList.toggle('open');if(btn)btn.textContent=o?'▲ Acceptatiecriteria':'✓ Acceptatiecriteria';}});
+}
+function setField(id,field,val){
+  pm[id][field]=val;
+  saveToSupabase(id);
+}
+// Inline budget edit
+function toggleBIEdit(id,btn){
+  const panel=document.getElementById('bi-'+id);
+  if(!panel) return;
+  const isOpen=panel.classList.toggle('open');
+  btn.textContent=isOpen?'▲':'✎';
+  const row=document.querySelector(`.item-row[data-id="${id}"]`);
+  if(row) row.classList.toggle('editing',isOpen);
+}
+function closeBIEdit(id){
+  const panel=document.getElementById('bi-'+id);
+  if(panel) panel.classList.remove('open');
+  const row=document.querySelector(`.item-row[data-id="${id}"]`);
+  if(row) row.classList.remove('editing');
+}
+function saveBIEdit(id,btn){
+  const panel=btn.closest('.bi-edit-panel');
+  const it=RAW.find(r=>r.id===id);
+  if(!it) return;
+  const feat=panel.querySelector('.bi-f-feat').value.trim();
+  if(feat) it.feature=feat;
+  it.wi=panel.querySelector('.bi-f-wi').value.trim()||it.wi;
+  it.domain=panel.querySelector('.bi-f-domain').value;
+  it.cat=panel.querySelector('.bi-f-cat').value;
+  it.moscow=panel.querySelector('.bi-f-moscow').value;
+  it.scope=panel.querySelector('.bi-f-scope').value;
+  it.desc=panel.querySelector('.bi-f-desc').value.trim();
+  pm[id].acceptanceCriteria=panel.querySelector('.bi-f-ac').value.trim();
+  const cd=panel.querySelector('.bi-f-created');if(cd) pm[id].createdDate=cd.value||'';
+  const rd=panel.querySelector('.bi-f-resolved');if(rd) pm[id].resolvedDate=rd.value||'';
+  saveToSupabase(id);
+  // sync item def to supabase
+  syncWorkItemDefs([it],[]);
+  closeBIEdit(id);
+  reRenderItem(id);
+}
+function deleteInlineItem(id){
+  if(!confirm('Dit work item permanent verwijderen?')) return;
+  const idx=RAW.findIndex(r=>r.id===id);
+  if(idx>=0) RAW.splice(idx,1);
+  syncWorkItemDefs(RAW,[id]);
+  renderAll();
+}
+// Add new item inline from budget tab domain header
+function addInlineBudgetItem(domain){
+  const newId=Math.max(...RAW.map(r=>r.id),0)+1;
+  const newItem={id:newId,wi:'',domain:domain,feature:'Nieuw item',desc:'',cat:'Gap',moscow:'Must have',scope:'In Scope'};
+  RAW.push(newItem);
+  pm[newId]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:new Date().toISOString().split('T')[0],resolvedDate:''};
+  renderAll();
+  // Open edit panel for new item and scroll to it
+  setTimeout(()=>{
+    const row=document.querySelector(`.item-row[data-id="${newId}"]`);
+    if(row){row.scrollIntoView({behavior:'smooth',block:'center'});}
+    const panel=document.getElementById('bi-'+newId);
+    if(panel){panel.classList.add('open');const feat=panel.querySelector('.bi-f-feat');if(feat){feat.focus();feat.select();}}
+  },80);
+}
+──
+function setSize(id,sz){
+  pm[id].size=sz;
+  // Auto-fill estimated hours from size midpoint if not manually overridden
+  if(sz&&sz!=='skip'){
+    const mid=getSizeMid(sz);
+    if(mid>0) pm[id].estimatedHours=Math.round(mid*2)/2;
+  } else if(sz==='skip'||!sz){
+    const wasAuto=config.sizes.some(s=>Math.round(getSizeMid(s.label)*2)/2===pm[id].estimatedHours);
+    if(wasAuto) pm[id].estimatedHours=null;
+  }
+  reRenderItem(id);
+  updateStats();updateBudget();
+  saveToSupabase(id);
+}
+function setActual(id,val){
+  pm[id].actualHours=val===''?null:parseFloat(val);
+  reRenderItem(id);
+  updateStats();updateBudget();updateOverBudgetAlert();
+  saveToSupabase(id);
+}
+function setEstimate(id,val){
+  pm[id].estimatedHours=val===''?null:parseFloat(val);
+  reRenderItem(id);
+  saveToSupabase(id);
+}
+function setInternal(id,field,val){
+  pm[id][field]=val;
+  saveToSupabase(id);
+}
+function toggleInternal(id,btn){
+  const panel=document.getElementById('int-'+id);
+  if(!panel) return;
+  const isOpen=panel.classList.toggle('open');
+  btn.textContent=isOpen?'▲ Intern':(pm[id].internalNotes?'📝 Intern':'+ Intern');
+}
+function setPM(id,field,val){
+  pm[id][field]=val;
+  reRenderItem(id);
+  updateStats();updateBudget();updateOverBudgetAlert();
+  if(field==='tpxAssignee') updateAssigneeFilters();
+  saveToSupabase(id);
+}
+function reRenderItem(id){
+  const it=RAW.find(r=>r.id===id);
+  const br=document.querySelector(`.item-row[data-id="${id}"]`);
+  const pr=document.querySelector(`.pm-row[data-id="${id}"]`);
+  if(br){const d=document.createElement('div');d.innerHTML=renderBudgetItem(it);br.replaceWith(d.firstChild);}
+  if(pr){const d=document.createElement('div');d.innerHTML=renderPMItem(it);pr.replaceWith(d.firstChild);}
+}
+function bulkDomain(domain,sz){
+  RAW.filter(it=>it.domain===domain).forEach(it=>{
+    pm[it.id].size=sz;
+    if(sz&&sz!=='skip'){const mid=getSizeMid(sz);if(mid>0)pm[it.id].estimatedHours=Math.round(mid*2)/2;}
+  });
+  renderAll();
+  // bulk save
+  RAW.filter(it=>it.domain===domain).forEach(it=>saveToSupabase(it.id));
+}
+function bulkStatus(domain,st){RAW.filter(it=>it.domain===domain).forEach(it=>{pm[it.id].status=st;});renderAll();}
+function toggleDom(h){const l=h.nextElementSibling,a=h.querySelector('.dh-arrow'),o=l.classList.toggle('open');a.classList.toggle('open',o);}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const counts={todo:0,progress:0,review:0,done:0,blocked:0};
+  RAW.forEach(it=>{const s=pm[it.id].status||'todo';counts[s]=(counts[s]||0)+1;});
+  const total=RAW.length;
+  const over=RAW.filter(it=>getBudgetStatus(it.id)==='over');
+  const warn=RAW.filter(it=>getBudgetStatus(it.id)==='warn');
+
+  const si=RAW.filter(it=>pm[it.id].size&&pm[it.id].size!=='skip');
+  let lo=0,hi=0,mid=0,actualCost=0,actualH=0;
+  si.forEach(it=>{
+    const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);
+    lo+=rng[0]*r;hi+=rng[1]*r;mid+=getSizeMid(pm[it.id].size)*r;
+    if(pm[it.id].actualHours!==null&&pm[it.id].actualHours!==''){actualCost+=(parseFloat(pm[it.id].actualHours)||0)*r;actualH+=parseFloat(pm[it.id].actualHours)||0;}
+  });
+  const fmt=v=>'€'+Math.round(v).toLocaleString('nl-BE');
+
+  let html=`<div class="budget-box"><div class="bt">Status overzicht</div><div class="budget-grid">
+    <div class="b-card"><div class="bl">To do</div><div class="bv" style="color:#6b7fa3">${counts.todo}</div><div class="bd">${Math.round(counts.todo/total*100)}%</div></div>
+    <div class="b-card"><div class="bl">In uitvoering</div><div class="bv" style="color:#F59E0B">${counts.progress}</div><div class="bd">${Math.round(counts.progress/total*100)}%</div></div>
+    <div class="b-card"><div class="bl">Review</div><div class="bv" style="color:#1E6FD9">${counts.review}</div><div class="bd">${Math.round(counts.review/total*100)}%</div></div>
+    <div class="b-card"><div class="bl">Afgerond</div><div class="bv" style="color:#10B981">${counts.done}</div><div class="bd">${Math.round(counts.done/total*100)}%</div></div>
+    <div class="b-card"><div class="bl">Geblokkeerd</div><div class="bv" style="color:#EF4444">${counts.blocked}</div><div class="bd">actie vereist</div></div>
+  </div></div>`;
+
+  html+=`<div class="budget-box"><div class="bt">Budget vs. actuals</div><div class="budget-grid">
+    <div class="b-card"><div class="bl">Inschatting midden</div><div class="bv">${fmt(mid)}</div><div class="bd">op basis van rollen</div></div>
+    <div class="b-card"><div class="bl">Inschatting max</div><div class="bv">${fmt(hi)}</div><div class="bd">worst case</div></div>
+    ${actualCost>0?`<div class="b-card"><div class="bl">Besteed (actuals)</div><div class="bv" style="color:${actualCost>hi?'#EF4444':actualCost>mid?'#F59E0B':'#10B981'}">${fmt(actualCost)}</div><div class="bd">${Math.round(actualH)}u</div></div>`:''}
+    <div class="b-card"><div class="bl">Over budget</div><div class="bv" style="color:${over.length?'#EF4444':'#10B981'}">${over.length}</div><div class="bd">${warn.length} in gevarenzone</div></div>
+  </div></div>`;
+
+  html+=`<div class="budget-box"><div class="bt">Voortgang per domein</div><div style="display:flex;flex-direction:column;gap:10px">`;
+  config.domains.forEach(dom=>{
+    const items=RAW.filter(it=>it.domain===dom);if(!items.length)return;
+    const doneC=items.filter(it=>pm[it.id].status==='done').length;
+    const inpC=items.filter(it=>pm[it.id].status==='progress').length;
+    const blkC=items.filter(it=>pm[it.id].status==='blocked').length;
+    const overC=items.filter(it=>getBudgetStatus(it.id)==='over').length;
+    const pct=Math.round(doneC/items.length*100);
+    html+=`<div><div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;flex-wrap:wrap;gap:4px">
+      <span style="font-weight:600">${dom}</span>
+      <span style="display:flex;gap:8px;color:#6b7fa3">
+        <span>${doneC}/${items.length} · ${pct}%</span>
+        ${blkC?`<span style="color:#EF4444;font-weight:600">${blkC} geblokkeerd</span>`:''}
+        ${overC?`<span style="color:#EF4444;font-weight:600">${overC} over budget</span>`:''}
+      </span></div>
+      <div style="background:#e0e8f5;border-radius:4px;height:10px;overflow:hidden;display:flex">
+        <div style="width:${pct}%;background:#10B981"></div>
+        <div style="width:${Math.round(inpC/items.length*100)}%;background:#F59E0B"></div>
+        <div style="width:${Math.round(blkC/items.length*100)}%;background:#EF4444"></div>
+      </div></div>`;
+  });
+  html+=`</div></div>`;
+
+  if(over.length){
+    html+=`<div class="budget-box"><div class="bt" style="color:#EF4444">Over budget — detail</div><div style="display:flex;flex-direction:column;gap:4px">`;
+    over.forEach(it=>{
+      const actual=parseFloat(pm[it.id].actualHours)||0;
+      const maxH=getSizeRange(pm[it.id].size)[1];
+      const r=getItemRate(it.id);
+      const diff=actual-maxH;
+      html+=`<div style="display:grid;grid-template-columns:1fr 100px 130px 130px;gap:8px;padding:8px 12px;background:#FEF2F2;border-radius:6px;font-size:12px;align-items:center">
+        <span><strong>${it.feature}</strong><span style="color:#6b7fa3;margin-left:6px">${it.domain}</span></span>
+        <span style="color:#6b7fa3">${pm[it.id].tpxAssignee||'—'}</span>
+        <span style="color:#6b7fa3">Max: ${maxH}u · Besteed: ${actual}u</span>
+        <span style="color:#EF4444;font-weight:600">+${diff.toFixed(1)}u · ${fmt(diff*r)}</span>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  document.getElementById('dashContent').innerHTML=html;
+  updateStats();
+}
+
+// ── CONFIG MODAL ──────────────────────────────────────────────────────────────
+function openConfig(){
+  document.getElementById('cfgProjectName').value=config.projectName;
+  document.getElementById('cfgClientName').value=config.clientName;
+  document.getElementById('cfgLoginSub').value=config.loginSub;
+  document.getElementById('cfgContactEmail').value=config.contactEmail;
+  renderRoleRates();renderSizeConfig();renderDomainTags();
+  document.getElementById('configModal').classList.add('open');
+}
+function closeConfig(){document.getElementById('configModal').classList.remove('open');}
+function saveConfig(){
+  config.projectName=document.getElementById('cfgProjectName').value.trim()||config.projectName;
+  config.clientName=document.getElementById('cfgClientName').value.trim()||config.clientName;
+  config.loginSub=document.getElementById('cfgLoginSub').value.trim()||config.loginSub;
+  config.contactEmail=document.getElementById('cfgContactEmail').value.trim()||config.contactEmail;
+  // Read role rates
+  config.roleRates.forEach((rr,i)=>{
+    const inp=document.getElementById(`rrRate${i}`);
+    if(inp) rr.rate=parseFloat(inp.value)||rr.rate;
+  });
+  // Read sizes
+  config.sizes.forEach((sz,i)=>{
+    const minI=document.getElementById(`szMin${i}`),maxI=document.getElementById(`szMax${i}`);
+    if(minI) sz.min=parseFloat(minI.value)||sz.min;
+    if(maxI) sz.max=parseFloat(maxI.value)||sz.max;
+  });
+  document.getElementById('appTitle').textContent=config.projectName;
+  document.getElementById('appSub').innerHTML='<span class="sync-dot" title="Live sync actief"></span>'+config.clientName+' × TPX · Budget · Planning · Status';
+  closeConfig();
+  initDomainFilter();
+  renderAll();
+}
+function renderRoleRates(){
+  document.getElementById('roleRateBody').innerHTML=config.roleRates.map((rr,i)=>`<tr>
+    <td style="font-weight:500">${rr.role}</td>
+    <td><input id="rrRate${i}" type="number" value="${rr.rate}" min="50" max="500" step="5"></td>
+    <td style="color:#6b7fa3">${rr.desc}</td>
+  </tr>`).join('');
+}
+function renderSizeConfig(){
+  const colors={XS:'#E6F1FB',S:'#EAF3DE',M:'#FAEEDA',L:'#FAECE7',XL:'#FCEBEB'};
+  document.getElementById('sizeConfigBody').innerHTML=config.sizes.map((sz,i)=>`<tr>
+    <td><span class="s-tag" style="background:${colors[sz.label]||'#f0f4fa'}">${sz.label}</span></td>
+    <td><input id="szMin${i}" type="number" value="${sz.min}" min="0" max="200" step="1"></td>
+    <td><input id="szMax${i}" type="number" value="${sz.max}" min="0" max="200" step="1"></td>
+    <td style="color:#6b7fa3;font-size:11px">${sz.hint}</td>
+  </tr>`).join('');
+}
+function renderDomainTags(){
+  document.getElementById('domainTagList').innerHTML=config.domains.map((d,i)=>`<span class="domain-tag">${d}<span class="dtdel" onclick="removeDomain(${i})">×</span></span>`).join('');
+}
+function addDomain(){
+  const v=document.getElementById('newDomainInput').value.trim();
+  if(!v||config.domains.includes(v)) return;
+  config.domains.push(v);document.getElementById('newDomainInput').value='';renderDomainTags();
+}
+function removeDomain(i){config.domains.splice(i,1);renderDomainTags();}
+
+// ── USER MODAL ────────────────────────────────────────────────────────────────
+function openUserMgmt(){renderUserTable();renderTeamTags();document.getElementById('userModal').classList.add('open');}
+function closeUserMgmt(){document.getElementById('userModal').classList.remove('open');updateAssigneeFilters();renderAll();}
+function saveUsers(){
+  // Read back all user table rows
+  document.querySelectorAll('.user-edit-row').forEach(row=>{
+    const idx=parseInt(row.dataset.idx);
+    users[idx].name=row.querySelector('.u-name').value.trim()||users[idx].name;
+    users[idx].email=row.querySelector('.u-email').value.trim()||users[idx].email;
+    users[idx].pin=row.querySelector('.u-pin').value.trim()||users[idx].pin;
+    users[idx].role=row.querySelector('.u-role').value;
+    users[idx].tpxRole=row.querySelector('.u-tpxrole').value;
+    const ov=row.querySelector('.u-override').value;
+    users[idx].rateOverride=ov?parseFloat(ov):null;
+  });
+  closeUserMgmt();
+}
+function renderUserTable(){
+  const roles=config.roleRates.map(r=>r.role);
+  document.getElementById('userTableBody').innerHTML=users.map((u,i)=>`<tr class="user-edit-row" data-idx="${i}">
+    <td><input class="u-name" value="${u.name}" placeholder="Naam" style="width:100px"></td>
+    <td><input class="u-email" value="${u.email}" placeholder="email" style="width:140px"></td>
+    <td><input class="u-pin" value="${u.pin}" placeholder="PIN" style="width:56px"></td>
+    <td><select class="u-role">
+      <option value="pm" ${u.role==='pm'?'selected':''}>PM</option>
+      <option value="tpx" ${u.role==='tpx'?'selected':''}>TPX</option>
+      <option value="client" ${u.role==='client'?'selected':''}>Klant</option>
+    </select></td>
+    <td><select class="u-tpxrole">${roles.map(r=>`<option value="${r}" ${u.tpxRole===r?'selected':''}>${r}</option>`).join('')}</select></td>
+    <td><input class="u-override" type="number" value="${u.rateOverride||''}" placeholder="—" min="50" max="500" style="width:70px"></td>
+    <td><button class="del-btn" onclick="removeUser(${i})">×</button></td>
+  </tr>`).join('');
+}
+function addUserRow(){
+  users.push({name:'',email:'',pin:'0000',role:'client',tpxRole:'Consultant',rateOverride:null});
+  renderUserTable();
+}
+function removeUser(i){if(users[i].email===currentUser?.email)return;users.splice(i,1);renderUserTable();}
+function renderTeamTags(){
+  const mkTag=(m,side,i)=>`<span class="domain-tag" style="background:#F4F6FA;color:#1a1a2e">${m}<span class="dtdel" style="color:#6b7fa3" onclick="removeMember('${side}',${i})">×</span></span>`;
+  document.getElementById('tpxMemberList').innerHTML=team.tpx.map((m,i)=>mkTag(m,'tpx',i)).join('');
+  document.getElementById('clientMemberList').innerHTML=team.client.map((m,i)=>mkTag(m,'client',i)).join('');
+}
+function addMember(side){
+  const inp=document.getElementById(side==='tpx'?'newTPX':'newClient');
+  const v=inp.value.trim();if(!v)return;team[side].push(v);inp.value='';renderTeamTags();
+}
+function removeMember(side,i){team[side].splice(i,1);renderTeamTags();}
+function updateAssigneeFilters(){
+  const ts=document.getElementById('fTPX'),cs=document.getElementById('fClient');
+  const tv=ts.value,cv=cs.value;
+  ts.innerHTML='<option value="">Alle</option>'+team.tpx.map(m=>`<option value="${m}" ${tv===m?'selected':''}>${m}</option>`).join('');
+  cs.innerHTML='<option value="">Alle</option>'+team.client.map(m=>`<option value="${m}" ${cv===m?'selected':''}>${m}</option>`).join('');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const isTpx=currentUser?.role!=='client';
+  const rows=[isTpx
+    ?['ID','Domain','Feature','Categorie','MoSCoW','Scope','Grootte','Min u','Midden u','Max u','Est u','Actuals u','Afwijking u','Min €','Midden €','Max €','Actuals €','Budget Status','Status','Intern status','TPX Assignee','Klant Assignee']
+    :['ID','Domain','Feature','Status','TPX Assignee','Klant Assignee']];
+  RAW.forEach(it=>{
+    const p=pm[it.id];
+    if(isTpx){
+      const s=p.size&&p.size!=='skip'?p.size:'';
+      const rng=s?getSizeRange(s):[0,0];const mid=s?getSizeMid(s):0;
+      const r=getItemRate(it.id);
+      const actual=p.actualHours!==null&&p.actualHours!==''?parseFloat(p.actualHours):'';
+      const est=p.estimatedHours!==null&&p.estimatedHours!==''?parseFloat(p.estimatedHours):'';
+      const dev=(actual!==''&&est!=='')?+(actual-est).toFixed(2):'';
+      rows.push([it.id,it.domain,it.feature,it.cat,it.moscow,it.scope,s,rng[0],Math.round(mid),rng[1],est,actual,dev,Math.round(rng[0]*r),Math.round(mid*r),Math.round(rng[1]*r),actual!==''?Math.round(actual*r):'',getBudgetStatus(it.id),STATUS_LABELS[p.status]||'',INTERNAL_STATUS_LABELS[p.internalStatus]||'',p.tpxAssignee,p.clientAssignee]);
+    } else {
+      rows.push([it.id,it.domain,it.feature,STATUS_LABELS[p.status]||'',p.tpxAssignee,p.clientAssignee]);
+    }
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`${config.projectName.replace(/\s+/g,'_')}_tracker.csv`;a.click();
+}
+
+// ── TIMESHEET ─────────────────────────────────────────────────────────────────
+function getWeekRange(offset){
+  const now=new Date();
+  const day=now.getDay();
+  const diffToMon=day===0?-6:1-day;
+  const mon=new Date(now);mon.setDate(now.getDate()+diffToMon+(offset*7));mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return {mon,sun};
+}
+function fmtDate(d){return d.toISOString().split('T')[0];}
+function fmtDateNL(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function getWeekLabel(offset){
+  const{mon}=getWeekRange(offset);
+  if(offset===0) return'Deze week';
+  if(offset===-1) return'Vorige week';
+  const{mon:m2,sun:s2}=getWeekRange(offset);
+  const fmt=d=>`${d.getDate()}/${d.getMonth()+1}`;
+  return`${fmt(m2)} – ${fmt(s2)}`;
+}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+const DAY_NAMES=['Ma','Di','Wo','Do','Vr','Za','Zo'];
+
+function initTsItemSelect(){
+  const sel=document.getElementById('tsItem');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— kies item —</option>';
+  RAW.forEach(it=>{
+    const o=document.createElement('option');
+    o.value=it.id;
+    o.textContent=`[${it.domain}] ${it.feature}`;
+    sel.appendChild(o);
+  });
+}
+
+function initTsPersonSelect(){
+  const sel=document.getElementById('tsPerson');
+  if(!sel)return;
+  const cur=sel.value;
+  const isPM=currentUser?.role==='pm';
+  sel.innerHTML=isPM?'<option value="">Alle consultants</option>':'';
+  team.tpx.forEach(m=>{
+    const o=document.createElement('option');
+    o.value=m;o.textContent=m;
+    if(m===cur||(m===currentUser?.name&&!cur))o.selected=true;
+    sel.appendChild(o);
+  });
+  if(!isPM&&!sel.value) sel.value=currentUser?.name||'';
+}
+
+function renderTimesheet(){
+  const{mon}=getWeekRange(tsWeekOffset);
+  document.getElementById('tsWeekLabel').textContent=getWeekLabel(tsWeekOffset);
+  const isPM=currentUser?.role==='pm';
+  const personFilter=(document.getElementById('tsPerson')||{value:''}).value;
+  const todayStr=fmtDate(new Date());
+  const dateInp=document.getElementById('tsDate');
+  if(dateInp&&!dateInp.value) dateInp.value=todayStr;
+
+  const days=Array.from({length:7},(_,i)=>addDays(mon,i));
+  const dayStrs=days.map(d=>fmtDate(d));
+
+  const visiblePersons=(!isPM||personFilter)?[personFilter||currentUser?.name]:team.tpx;
+
+  const byPersonDate={};
+  timeEntries.forEach(e=>{
+    if(!isPM&&e.person!==currentUser?.name) return;
+    if(personFilter&&e.person!==personFilter) return;
+    const k=`${e.person}||${e.entry_date}`;
+    (byPersonDate[k]=byPersonDate[k]||[]).push(e);
+  });
+
+  let html=`<div class="ts-cal">`;
+  html+=`<div class="ts-cal-head"><div class="ts-cal-head-label">Consultant</div>`;
+  days.forEach((d,i)=>{
+    const isToday=fmtDate(d)===todayStr;
+    html+=`<div class="ts-cal-head-day${isToday?' today':''}${i>=5?' weekend':''}">${DAY_NAMES[i]}<br><span style="font-size:13px;font-weight:700;color:${isToday?'#1E6FD9':'#0D1F3C'}">${d.getDate()}</span></div>`;
+  });
+  html+=`</div>`;
+
+  const colTotals=Array(7).fill(0);
+  visiblePersons.forEach(person=>{
+    if(!person) return;
+    html+=`<div class="ts-cal-person"><div class="ts-cal-name">${person}</div>`;
+    days.forEach((d,i)=>{
+      const dateStr=dayStrs[i];
+      const isToday=dateStr===todayStr;
+      const entries=(byPersonDate[`${person}||${dateStr}`]||[]);
+      const dayH=entries.reduce((s,e)=>s+(parseFloat(e.hours)||0),0);
+      colTotals[i]+=dayH;
+      const isMine=person===currentUser?.name;
+      const personKey=person.replace(/[^a-zA-Z0-9]/g,'_');
+      html+=`<div class="ts-cal-cell${isToday?' today':''}${i>=5?' weekend':''}">`;
+      entries.forEach(e=>{
+        const it=RAW.find(r=>r.id===e.work_item_id);
+        const label=it?it.feature.substring(0,16)+(it.feature.length>16?'…':''):'?';
+        html+=`<div class="ts-chip${isMine?' mine':''}" title="${it?it.feature:''}\n${e.description||''}"><span class="tc-h">${parseFloat(e.hours).toFixed(1)}u</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;margin:0 2px">${label}</span><span class="tc-del" onclick="event.stopPropagation();deleteTimeEntry('${e.id}')">×</span></div>`;
+      });
+      html+=`<span class="ts-cal-add" onclick="openInlineEntry('${personKey}','${dateStr}',this)">+</span>`;
+      html+=`<div class="ts-inline-form" id="inline-${personKey}-${dateStr}">`;
+      html+=`<div class="ts-inline-row">`;
+      html+=`<select style="max-width:150px;font-size:11px;padding:3px 4px;border:1px solid #d0dce8;border-radius:4px">${RAW.map(it=>`<option value="${it.id}">${it.feature.substring(0,22)}</option>`).join('')}</select>`;
+      html+=`<input type="number" min="0.25" max="24" step="0.25" value="1" style="width:46px;font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:4px">`;
+      html+=`<input type="text" placeholder="Omschrijving..." style="flex:1;min-width:70px;font-size:11px;padding:3px 5px;border:1px solid #d0dce8;border-radius:4px">`;
+      html+=`<button class="ts-inline-btn ok" onclick="submitInlineEntry('${person}','${dateStr}',this)">OK</button>`;
+      html+=`<button class="ts-inline-btn cancel" onclick="closeInlineEntry(this)">✕</button>`;
+      html+=`</div></div>`;
+      if(dayH>0) html+=`<div class="ts-cal-total">${dayH.toFixed(1)}u</div>`;
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+
+  html+=`<div class="ts-cal-footer"><div class="ts-cal-footer-label">Totaal dag</div>`;
+  colTotals.forEach(h=>{html+=`<div class="ts-cal-footer-cell">${h>0?h.toFixed(1)+'u':'—'}</div>`;});
+  html+=`</div></div>`;
+
+  const weekEntries=timeEntries.filter(e=>{
+    if(!isPM&&e.person!==currentUser?.name) return false;
+    if(personFilter&&e.person!==personFilter) return false;
+    return dayStrs.includes(e.entry_date);
+  });
+  if(weekEntries.length){
+    const byPerson={};
+    weekEntries.forEach(e=>{byPerson[e.person]=(byPerson[e.person]||0)+(parseFloat(e.hours)||0);});
+    html+=`<div class="ts-summary">`;
+    Object.entries(byPerson).sort((a,b)=>b[1]-a[1]).forEach(([name,h])=>{
+      const rate=getUserRate(name);
+      html+=`<div class="ts-scard"><div class="sc-name">${name}</div><div class="sc-h">${h.toFixed(1)}u</div><div class="sc-sub">€${Math.round(h*rate).toLocaleString('nl-BE')}</div></div>`;
+    });
+    const totH=weekEntries.reduce((s,e)=>s+(parseFloat(e.hours)||0),0);
+    html+=`<div class="ts-scard" style="border-color:#1E6FD9"><div class="sc-name">Totaal team</div><div class="sc-h" style="color:#1E6FD9">${totH.toFixed(1)}u</div><div class="sc-sub">week totaal</div></div>`;
+    html+=`</div>`;
+  }
+  document.getElementById('tsContent').innerHTML=html;
+}
+
+function openInlineEntry(personKey,dateStr,btn){
+  document.querySelectorAll('.ts-inline-form.open').forEach(f=>f.classList.remove('open'));
+  const form=document.getElementById('inline-'+personKey+'-'+dateStr);
+  if(form) form.classList.add('open');
+}
+function closeInlineEntry(btn){btn.closest('.ts-inline-form').classList.remove('open');}
+async function submitInlineEntry(person,dateStr,btn){
+  const form=btn.closest('.ts-inline-form');
+  const sel=form.querySelector('select');
+  const hInp=form.querySelector('input[type=number]');
+  const descInp=form.querySelector('input[type=text]');
+  const itemId=parseInt(sel.value);
+  const hours=parseFloat(hInp.value);
+  if(!itemId||!hours||hours<=0){alert('Kies een item en vul uren in.');return;}
+  const entry={id:crypto.randomUUID(),work_item_id:itemId,person:person,entry_date:dateStr,hours:hours,description:descInp.value.trim(),created_at:new Date().toISOString()};
+  timeEntries.unshift(entry);
+  await saveTimeEntry(entry);
+  form.classList.remove('open');
+  renderTimesheet();
+}
+
+async function addTimeEntry(){
+  const date=document.getElementById('tsDate').value;
+  const itemId=parseInt(document.getElementById('tsItem').value);
+  const hours=parseFloat(document.getElementById('tsHours').value);
+  const desc=document.getElementById('tsDesc').value.trim();
+  if(!date||!itemId||!hours||hours<=0){alert('Vul datum, work item en uren in.');return;}
+  const entry={id:crypto.randomUUID(),work_item_id:itemId,person:currentUser.name,entry_date:date,hours:hours,description:desc,created_at:new Date().toISOString()};
+  timeEntries.unshift(entry);
+  await saveTimeEntry(entry);
+  document.getElementById('tsHours').value='';
+  document.getElementById('tsDesc').value='';
+  renderTimesheet();
+}
+
+
+// ── SIGN-OFF ──────────────────────────────────────────────────────────────────
+function renderSignoff(){
+  const isTpx=currentUser?.role!=='client';
+  const isPM=currentUser?.role==='pm';
+  const today=new Date().toISOString().split('T')[0];
+
+  // Stats
+  const total=RAW.length;
+  const signed=RAW.filter(it=>signoffs[it.id]?.status==='signed').length;
+  const rejected=RAW.filter(it=>signoffs[it.id]?.status==='rejected').length;
+  const pending=total-signed-rejected;
+  const pct=total?Math.round(signed/total*100):0;
+
+  let html='';
+
+  // ── Milestones ────────────────────────────────────────────────────────────
+  html+=`<div class="so-section">
+    <div class="so-section-head">
+      <span class="so-section-title">Mijlpalen</span>
+      ${isPM?`<button class="bbtn" onclick="addMilestone()">+ Mijlpaal</button>`:''}
+    </div>
+    <div class="so-milestone-grid" id="milestoneGrid">`;
+
+  milestones.forEach((ms,idx)=>{
+    const isDone=ms.status==='done';
+    const isOver=ms.targetDate&&ms.targetDate<today&&ms.status!=='done';
+    html+=`<div class="so-milestone${isDone?' done':isOver?' overdue':''}" id="ms-${ms.id}">
+      <div class="so-milestone-name">
+        ${isPM?`<input type="text" value="${escHtml(ms.name)}" onchange="setMilestone('${ms.id}','name',this.value)" style="font-weight:600;color:#0D1F3C">`:
+          `<strong>${escHtml(ms.name)}</strong>`}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+        <span style="font-size:10px;color:#6b7fa3">Streefdatum:</span>
+        ${isTpx?`<input type="date" value="${ms.targetDate||''}" onchange="setMilestone('${ms.id}','targetDate',this.value)">`:
+          `<span style="font-size:11px">${ms.targetDate?fmtDateNL(ms.targetDate):'—'}</span>`}
+      </div>
+      ${ms.note||isTpx?`<input type="text" value="${escHtml(ms.note||'')}" placeholder="Notitie..." ${isTpx?`onchange="setMilestone('${ms.id}','note',this.value)"`:'readonly'} style="margin-bottom:4px">`:'' }
+      <div class="so-ms-status">
+        ${['open','in progress','done'].map(s=>`<button class="so-ms-btn${ms.status===s?' active':''}" onclick="${isTpx?`setMilestone('${ms.id}','status','${s}')`:''}">${s==='open'?'Open':s==='in progress'?'Loopt':'Klaar'}</button>`).join('')}
+        ${isPM?`<button class="so-ms-btn" style="color:#EF4444;border-color:#FCA5A5;margin-left:auto" onclick="deleteMilestone('${ms.id}')">×</button>`:''}
+      </div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+
+  // ── Overall progress ───────────────────────────────────────────────────────
+  html+=`<div class="so-section">
+    <div class="so-section-head">
+      <span class="so-section-title">Voortgang sign-off</span>
+      <span style="font-size:12px;color:#6b7fa3">${signed}/${total} aanvaard · ${rejected} afgekeurd · ${pending} open</span>
+    </div>
+    <div class="so-progress-row">
+      <div class="so-prog"><div class="so-prog-fill" style="width:${pct}%"></div></div>
+      <span style="font-size:12px;font-weight:600;color:#0D1F3C;white-space:nowrap">${pct}% aanvaard</span>
+    </div>
+    <div class="so-filter-bar">
+      <select onchange="soFilterDomain=this.value;renderSignoff()">
+        <option value="">Alle domeinen</option>
+        ${config.domains.map(d=>`<option value="${d}" ${soFilterDomain===d?'selected':''}>${d}</option>`).join('')}
+      </select>
+      <select onchange="soFilterStatus=this.value;renderSignoff()">
+        <option value="">Alle statussen</option>
+        <option value="pending" ${soFilterStatus==='pending'?'selected':''}>Open</option>
+        <option value="signed" ${soFilterStatus==='signed'?'selected':''}>Aanvaard</option>
+        <option value="rejected" ${soFilterStatus==='rejected'?'selected':''}>Afgekeurd</option>
+      </select>
+      <input type="text" placeholder="Zoek feature..." value="${soFilterSearch}" oninput="soFilterSearch=this.value;renderSignoff()" style="width:160px">
+    </div>
+    <table class="so-table">
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th>Feature</th>
+        <th style="width:100px">Domein</th>
+        ${isTpx?'<th style="width:80px">Grootte</th>':''}
+        <th style="width:110px">Status</th>
+        <th style="width:120px">Door / Datum</th>
+        <th>Opmerking</th>
+        <th style="width:140px">Actie</th>
+      </tr></thead>
+      <tbody>`;
+
+  // Filter items
+  let items=RAW.filter(it=>{
+    if(soFilterDomain&&it.domain!==soFilterDomain) return false;
+    if(soFilterStatus&&signoffs[it.id]?.status!==soFilterStatus) return false;
+    if(soFilterSearch&&!it.feature.toLowerCase().includes(soFilterSearch.toLowerCase())) return false;
+    return true;
+  });
+
+  items.forEach(it=>{
+    const so=signoffs[it.id]||{status:'pending',signedBy:'',signedAt:'',remark:''};
+    const sizeLabel=pm[it.id]?.size&&pm[it.id].size!=='skip'?pm[it.id].size:'—';
+    const acText=pm[it.id]?.acceptanceCriteria||'';
+    html+=`<tr>
+      <td style="color:#8a9dbb;font-size:10px">${it.id}</td>
+      <td>
+        <div style="font-weight:500">${it.feature}</div>
+        ${acText?`<div style="font-size:10px;color:#16A34A;margin-top:2px">✓ ${acText.substring(0,70)}${acText.length>70?'…':''}</div>`:''}
+      </td>
+      <td style="font-size:11px;color:#6b7fa3">${it.domain}</td>
+      ${isTpx?`<td><span class="sbtn a${sizeLabel}" style="pointer-events:none;display:inline-block;padding:2px 6px">${sizeLabel}</span></td>`:''}
+      <td><span class="so-pill ${so.status}">${so.status==='signed'?'✓ Aanvaard':so.status==='rejected'?'✗ Afgekeurd':'⬤ Open'}</span></td>
+      <td style="font-size:11px;color:#6b7fa3">${so.signedBy?`${so.signedBy}<br>${fmtDateNL(so.signedAt)}`:'—'}</td>
+      <td><input class="so-remark" value="${escHtml(so.remark||'')}" placeholder="Opmerking..." onchange="setSignoffRemark(${it.id},this.value)"></td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="so-sign-btn${so.status==='signed'?' signed':''}" onclick="doSignoff(${it.id},'signed')">✓ Aanvaard</button>
+          <button class="so-sign-btn${so.status==='rejected'?' rejected':''}" onclick="doSignoff(${it.id},'rejected')">✗ Afkeur</button>
+          ${so.status!=='pending'?`<button class="so-sign-btn" onclick="doSignoff(${it.id},'pending')" style="font-size:10px">↩</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html+=`</tbody></table></div>`;
+  document.getElementById('soContent').innerHTML=html;
+}
+
+function doSignoff(itemId,status){
+  const so=signoffs[itemId];
+  so.status=status;
+  if(status!=='pending'){
+    so.signedBy=currentUser?.name||'';
+    so.signedAt=new Date().toISOString().split('T')[0];
+  } else {
+    so.signedBy='';so.signedAt='';
+  }
+  saveSignoff(itemId);
+  renderSignoff();
+}
+function setSignoffRemark(itemId,val){
+  signoffs[itemId].remark=val;
+  saveSignoff(itemId);
+}
+function setMilestone(id,field,val){
+  const ms=milestones.find(m=>m.id===id);
+  if(!ms) return;
+  ms[field]=val;
+  saveMilestone(ms);
+  renderSignoff();
+}
+function addMilestone(){
+  const ms={id:'ms'+Date.now(),name:'Nieuwe mijlpaal',targetDate:'',status:'open',note:''};
+  milestones.push(ms);
+  saveMilestone(ms);
+  renderSignoff();
+}
+function deleteMilestone(id){
+  milestones=milestones.filter(m=>m.id!==id);
+  supaFetch(`milestones?id=eq.${id}`,'DELETE').catch(()=>{});
+  renderSignoff();
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────────────────────
+function openPDFExport(){
+  const w=window.open('','_blank');
+  const html=buildPDFHtml();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),600);
+}
+
+function buildPDFHtml(){
+  const today=new Date().toLocaleDateString('nl-BE');
+  const fmt=v=>'€'+Math.round(v).toLocaleString('nl-BE');
+
+  // Budget totals
+  const si=RAW.filter(it=>pm[it.id]?.size&&pm[it.id].size!=='skip');
+  let lo=0,hi=0,mid=0;
+  si.forEach(it=>{
+    const rng=getSizeRange(pm[it.id].size);
+    const r=getItemRate(it.id);
+    lo+=rng[0]*r;hi+=rng[1]*r;mid+=getSizeMid(pm[it.id].size)*r;
+  });
+
+  // Sign-off stats
+  const total=RAW.length;
+  const signed=RAW.filter(it=>signoffs[it.id]?.status==='signed').length;
+  const rejected=RAW.filter(it=>signoffs[it.id]?.status==='rejected').length;
+
+  // Build domain sections for budget
+  const domainRows=config.domains.map(dom=>{
+    const items=RAW.filter(it=>it.domain===dom&&pm[it.id]?.size&&pm[it.id].size!=='skip');
+    if(!items.length) return '';
+    let domLo=0,domHi=0,domMid=0;
+    items.forEach(it=>{
+      const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);
+      domLo+=rng[0]*r;domHi+=rng[1]*r;domMid+=getSizeMid(pm[it.id].size)*r;
+    });
+    const rows=items.map(it=>{
+      const rng=getSizeRange(pm[it.id].size);const r=getItemRate(it.id);
+      const so=signoffs[it.id];
+      const soLabel=so?.status==='signed'?'✓':so?.status==='rejected'?'✗':'—';
+      const acText=pm[it.id]?.acceptanceCriteria||'';
+      return `<tr>
+        <td>${it.id}</td>
+        <td><strong>${it.feature}</strong>${acText?`<br><span style="font-size:9px;color:#16A34A">AC: ${acText.substring(0,80)}</span>`:''}</td>
+        <td>${it.cat||'—'}</td>
+        <td>${it.moscow||'—'}</td>
+        <td style="text-align:center">${pm[it.id].size}</td>
+        <td style="text-align:right">${rng[0]}–${rng[1]}u</td>
+        <td style="text-align:right">${fmt(getSizeMid(pm[it.id].size)*r)}</td>
+        <td style="text-align:center;font-weight:600;color:${so?.status==='signed'?'#16A34A':so?.status==='rejected'?'#DC2626':'#6b7fa3'}">${soLabel}</td>
+        ${so?.status!=='pending'?`<td style="font-size:9px">${so.signedBy||''} ${so.signedAt?fmtDateNL(so.signedAt):''}</td>`:'<td></td>'}
+      </tr>`;
+    }).join('');
+    return `<tr style="background:#F4F6FA"><td colspan="9" style="font-weight:700;padding:6px 8px">${dom} — ${items.length} items · ${fmt(domMid)} midden · ${fmt(domLo)}–${fmt(domHi)}</td></tr>${rows}`;
+  }).join('');
+
+  // Milestone rows
+  const msRows=milestones.map(ms=>`<tr>
+    <td><strong>${ms.name}</strong></td>
+    <td>${ms.targetDate?fmtDateNL(ms.targetDate):'—'}</td>
+    <td style="font-weight:600;color:${ms.status==='done'?'#16A34A':ms.status==='in progress'?'#D97706':'#6b7fa3'}">${ms.status==='done'?'✓ Klaar':ms.status==='in progress'?'Loopt':'Open'}</td>
+    <td>${ms.note||''}</td>
+  </tr>`).join('');
+
+  // Sign-off summary by domain
+  const soSummaryRows=config.domains.map(dom=>{
+    const items=RAW.filter(it=>it.domain===dom);
+    if(!items.length) return '';
+    const s=items.filter(it=>signoffs[it.id]?.status==='signed').length;
+    const r=items.filter(it=>signoffs[it.id]?.status==='rejected').length;
+    const p=items.length-s-r;
+    return `<tr><td>${dom}</td><td style="text-align:center;color:#16A34A">${s}</td><td style="text-align:center;color:#DC2626">${r}</td><td style="text-align:center;color:#6b7fa3">${p}</td><td style="text-align:center">${items.length}</td></tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
+  <title>${config.projectName} — Sign-off & Budget rapport</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a2e;padding:20px}
+    h1{font-size:20px;color:#0D1F3C;margin-bottom:4px}
+    h2{font-size:14px;color:#0D1F3C;margin:20px 0 8px;padding-bottom:4px;border-bottom:2px solid #0D1F3C}
+    h3{font-size:12px;color:#6b7fa3;margin:12px 0 6px}
+    .meta{font-size:11px;color:#6b7fa3;margin-bottom:16px}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+    .s-card{background:#F4F6FA;border-radius:6px;padding:10px 12px}
+    .s-card .v{font-size:22px;font-weight:700;color:#0D1F3C}
+    .s-card .l{font-size:10px;color:#6b7fa3;margin-bottom:2px}
+    table{width:100%;border-collapse:collapse;margin-bottom:12px}
+    th{background:#0D1F3C;color:#fff;padding:5px 8px;text-align:left;font-size:10px}
+    td{padding:4px 8px;border-bottom:1px solid #e0e8f5;vertical-align:top}
+    tr:nth-child(even) td{background:#FAFAFA}
+    .badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600}
+    .badge-gap{background:#EBF7F2;color:#0E8A5A}
+    .badge-fit{background:#E6F1FB;color:#185FA5}
+    .footer{margin-top:20px;font-size:10px;color:#6b7fa3;border-top:1px solid #e0e8f5;padding-top:8px}
+    @media print{body{padding:10px}@page{margin:15mm;size:A4}}
+  </style></head><body>
+  <h1>${config.projectName}</h1>
+  <div class="meta">Sign-off & Budget rapport · Gegenereerd op ${today} · ${config.clientName} × TPX</div>
+
+  <h2>Mijlpalen</h2>
+  <table><thead><tr><th>Mijlpaal</th><th>Streefdatum</th><th>Status</th><th>Notitie</th></tr></thead>
+  <tbody>${msRows}</tbody></table>
+
+  <h2>Budget samenvatting</h2>
+  <div class="summary-grid">
+    <div class="s-card"><div class="l">Ingeschat (items)</div><div class="v">${si.length}<span style="font-size:14px;color:#6b7fa3"> / ${total}</span></div></div>
+    <div class="s-card"><div class="l">Budget laag</div><div class="v" style="font-size:16px">${fmt(lo)}</div></div>
+    <div class="s-card"><div class="l">Budget midden</div><div class="v" style="font-size:16px;color:#1E6FD9">${fmt(mid)}</div></div>
+    <div class="s-card"><div class="l">Budget hoog</div><div class="v" style="font-size:16px">${fmt(hi)}</div></div>
+  </div>
+
+  <h2>Sign-off overzicht per domein</h2>
+  <table><thead><tr><th>Domein</th><th style="text-align:center">Aanvaard</th><th style="text-align:center">Afgekeurd</th><th style="text-align:center">Open</th><th style="text-align:center">Totaal</th></tr></thead>
+  <tbody>${soSummaryRows}</tbody></table>
+  <p style="font-size:11px;margin-bottom:16px"><strong>Totaal: ${signed}/${total} aanvaard (${Math.round(signed/total*100)||0}%) · ${rejected} afgekeurd · ${total-signed-rejected} open</strong></p>
+
+  <h2>Detail per domein — Budget &amp; Sign-off</h2>
+  <table><thead><tr><th>#</th><th>Feature</th><th>Cat</th><th>MoSCoW</th><th>Size</th><th style="text-align:right">Uren</th><th style="text-align:right">Budget</th><th style="text-align:center">SO</th><th>Door / Datum</th></tr></thead>
+  <tbody>${domainRows}</tbody></table>
+
+  <div class="footer">
+    ${config.projectName} · ${config.clientName} × TPX · Rapport gegenereerd ${today}
+    ${currentUser?` · Opgemaakt door ${currentUser.name}`:''}
+  </div>
+  </body></html>`;
+}
+
+// ── WORK ITEM EDITOR ─────────────────────────────────────────────────────────
+let wiDraft=[];      // working copy while modal is open
+let wiNextId=null;   // next available id for new items
+
+function openWIEditor(){
+  // Deep-copy RAW into wiDraft
+  wiDraft=RAW.map(it=>({...it}));
+  wiNextId=Math.max(...RAW.map(r=>r.id),0)+1;
+  // Build domain filter
+  const df=document.getElementById('wiDomainFilter');
+  df.innerHTML='<option value="">Alle domeinen</option>';
+  config.domains.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;df.appendChild(o);});
+  document.getElementById('wiSearch').value='';
+  renderWIEditor();
+  document.getElementById('wiModal').classList.add('open');
+}
+
+function closeWIEditor(){
+  document.getElementById('wiModal').classList.remove('open');
+  wiDraft=[];
+}
+
+function saveWIEditor(){
+  // Read all editable rows back into wiDraft
+  document.querySelectorAll('.wi-edit-row').forEach(row=>{
+    const id=parseInt(row.dataset.id);
+    const idx=wiDraft.findIndex(x=>x.id===id);
+    if(idx<0) return;
+    wiDraft[idx].wi      = row.querySelector('.wi-f-wi').value.trim()||wiDraft[idx].wi;
+    wiDraft[idx].feature = row.querySelector('.wi-f-feat').value.trim()||wiDraft[idx].feature;
+    wiDraft[idx].domain  = row.querySelector('.wi-f-domain').value;
+    wiDraft[idx].cat     = row.querySelector('.wi-f-cat').value;
+    wiDraft[idx].moscow  = row.querySelector('.wi-f-moscow').value;
+    wiDraft[idx].scope   = row.querySelector('.wi-f-scope').value;
+    wiDraft[idx].desc    = row.querySelector('.wi-f-desc').value.trim();
+    wiDraft[idx].acceptanceCriteria = row.querySelector('.wi-f-ac').value.trim();
+    const cdEl=row.querySelector('.wi-f-created'); if(cdEl) wiDraft[idx].createdDate=cdEl.value||'';
+    const rdEl=row.querySelector('.wi-f-resolved'); if(rdEl) wiDraft[idx].resolvedDate=rdEl.value||'';
+  });
+
+  // Track deleted ids for Supabase
+  const draftIds=new Set(wiDraft.map(x=>x.id));
+  const deletedIds=RAW.filter(r=>!draftIds.has(r.id)).map(r=>r.id);
+
+  // Apply back to RAW (mutate in place + add new)
+  wiDraft.forEach((item,order)=>{
+    const idx=RAW.findIndex(r=>r.id===item.id);
+    if(idx>=0){ RAW[idx]=item; }
+    else {
+      RAW.push(item);
+      pm[item.id]={size:null,status:'todo',tpxAssignee:'',clientAssignee:'',actualHours:null,estimatedHours:null,internalNotes:'',internalStatus:'',acceptanceCriteria:'',createdDate:'',resolvedDate:''};
+    }
+  });
+  for(let i=RAW.length-1;i>=0;i--){ if(!draftIds.has(RAW[i].id)) RAW.splice(i,1); }
+
+  closeWIEditor();
+  initDomainFilter();
+  renderAll();
+
+  // Sync to Supabase async
+  syncWorkItemDefs(wiDraft, deletedIds);
+}
+
+async function syncWorkItemDefs(items, deletedIds){
+  showLoading(true);
+  try{
+    // Upsert all items
+    const payload=items.map((it,i)=>({
+      id:it.id, wi:it.wi||'', domain:it.domain||'', feature:it.feature||'',
+      description:it.desc||'', cat:it.cat||'', moscow:it.moscow||'', scope:it.scope||'',
+      acceptance_criteria:pm[it.id]?.acceptanceCriteria||'',
+      created_date:pm[it.id]?.createdDate||null,
+      resolved_date:pm[it.id]?.resolvedDate||null,
+      sort_order:i, updated_at:new Date().toISOString()
+    }));
+    await supaFetch('work_item_defs','POST',payload);
+    // Delete removed items
+    for(const id of deletedIds){
+      await supaFetch(`work_item_defs?id=eq.${id}`,'DELETE');
+    }
+  }catch(e){console.warn('Supabase work_item_defs sync failed',e);}
+  showLoading(false);
+}
+
+function deleteWIItem(id){
+  wiDraft=wiDraft.filter(x=>x.id!==id);
+  renderWIEditor();
+}
+
+function addWIItem(domain){
+  const newItem={
+    id:wiNextId++,
+    wi:'',
+    domain:domain,
+    feature:'',
+    desc:'',
+    cat:'Gap',
+    moscow:'Must have',
+    scope:'In Scope',
+    acceptanceCriteria:'',
+    createdDate:new Date().toISOString().split('T')[0],
+    resolvedDate:''
+  };
+  wiDraft.push(newItem);
+  renderWIEditor(domain);
+  // Focus the new feature input
+  setTimeout(()=>{
+    const newRow=document.querySelector(`.wi-edit-row[data-id="${newItem.id}"] .wi-f-feat`);
+    if(newRow){newRow.focus();newRow.scrollIntoView({behavior:'smooth',block:'center'});}
+  },50);
+}
+
+function renderWIEditor(scrollDomain){
+  const search=(document.getElementById('wiSearch').value||'').toLowerCase();
+  const domFilter=document.getElementById('wiDomainFilter').value;
+
+  let filtered=wiDraft.filter(it=>{
+    if(domFilter&&it.domain!==domFilter) return false;
+    if(search&&!it.feature.toLowerCase().includes(search)&&!it.wi.toLowerCase().includes(search)&&!it.domain.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Group by domain (preserve config order + extras)
+  const domainOrder=[...config.domains,...[...new Set(wiDraft.map(x=>x.domain))].filter(d=>!config.domains.includes(d))];
+  const byDomain={};
+  filtered.forEach(it=>{(byDomain[it.domain]=byDomain[it.domain]||[]).push(it);});
+
+  const MOSCOW_OPTS=['Must have','Should have','Could have','Define need','No need','Won\'t have'];
+  const CAT_OPTS=['Gap','Fit',''];
+  const SCOPE_OPTS=['In Scope','Out of Scope',''];
+
+  const domainOpts=domainOrder.map(d=>`<option value="${d}">${d}</option>`).join('');
+
+  let html='';
+  domainOrder.forEach(dom=>{
+    const items=byDomain[dom];
+    const allItems=wiDraft.filter(x=>x.domain===dom);
+    // Always show "Add" button for each domain even if filtered out
+    const addBtn=`<button class="wi-add-inline" onclick="addWIItem('${dom.replace(/'/g,"\\'")}')">+ Nieuw item</button>`;
+    if(!items&&!domFilter&&!search){
+      // domain exists but no items after filter — still show add
+      html+=`<div class="wi-domain-block" id="wid-${dom.replace(/\s/g,'_')}">
+        <div class="wi-domain-label"><span>${dom} <span class="wi-stats">(${allItems.length} items)</span></span>${addBtn}</div>
+      </div>`;
+      return;
+    }
+    if(!items) return;
+
+    html+=`<div class="wi-domain-block" id="wid-${dom.replace(/\s/g,'_')}">
+      <div class="wi-domain-label">
+        <span>${dom} <span class="wi-stats">(${items.length}${search||domFilter?'/'+allItems.length:''} items)</span></span>
+        ${addBtn}
+      </div>
+      <table class="wi-table">
+        <thead><tr>
+          <th style="width:24px">#</th>
+          <th style="width:100px">Groep</th>
+          <th>Feature naam</th>
+          <th style="width:100px">Domein</th>
+          <th style="width:50px">Cat</th>
+          <th style="width:90px">MoSCoW</th>
+          <th style="width:78px">Scope</th>
+          <th>Beschrijving</th>
+          <th style="width:180px">Acceptatiecriteria</th>
+          <th style="width:90px">Aangemaakt</th>
+          <th style="width:90px">Opgelost</th>
+          <th style="width:24px"></th>
+        </tr></thead>
+        <tbody>`;
+
+    items.forEach(it=>{
+      const isNew=!RAW.find(r=>r.id===it.id);
+      html+=`<tr class="wi-edit-row${isNew?' wi-new-row':''}" data-id="${it.id}">
+        <td style="font-size:10px;color:#8a9dbb;text-align:center">${it.id}</td>
+        <td><input class="wi-input wi-f-wi" value="${escHtml(it.wi)}" placeholder="Groep..."></td>
+        <td><input class="wi-input wi-f-feat" value="${escHtml(it.feature)}" placeholder="Feature naam..." style="font-weight:500"></td>
+        <td><select class="wi-select wi-f-domain">${domainOpts.replace(`value="${it.domain}"`,`value="${it.domain}" selected`)}</select></td>
+        <td><select class="wi-select wi-f-cat">
+          ${CAT_OPTS.map(v=>`<option value="${v}" ${it.cat===v?'selected':''}>${v||'—'}</option>`).join('')}
+        </select></td>
+        <td><select class="wi-select wi-f-moscow">
+          ${MOSCOW_OPTS.map(v=>`<option value="${v}" ${it.moscow===v?'selected':''}>${v}</option>`).join('')}
+        </select></td>
+        <td><select class="wi-select wi-f-scope">
+          ${SCOPE_OPTS.map(v=>`<option value="${v}" ${it.scope===v?'selected':''}>${v||'—'}</option>`).join('')}
+        </select></td>
+        <td><input class="wi-input wi-f-desc" value="${escHtml(it.desc||'')}" placeholder="Omschrijving..."></td>
+        <td><textarea class="wi-input wi-f-ac" style="min-height:32px;resize:vertical" placeholder="Acceptatiecriteria...">${escHtml(pm[it.id]?.acceptanceCriteria||'')}</textarea></td>
+        <td><input type="date" class="wi-input wi-f-created" value="${pm[it.id]?.createdDate||''}"></td>
+        <td><input type="date" class="wi-input wi-f-resolved" value="${pm[it.id]?.resolvedDate||''}"></td>
+        <td><button class="wi-del" onclick="deleteWIItem(${it.id})" title="Verwijderen">×</button></td>
+      </tr>`;
+    });
+
+    html+=`</tbody></table></div>`;
+  });
+
+  if(!html) html='<div class="no-items" style="padding:24px 0">Geen items gevonden.</div>';
+
+  document.getElementById('wiModalBody').innerHTML=html;
+  document.getElementById('wiFooterStats').textContent=`${wiDraft.length} work items · ${wiDraft.filter(x=>!RAW.find(r=>r.id===x.id)).length} nieuw · ${RAW.length-wiDraft.filter(x=>RAW.find(r=>r.id===x.id)).length} verwijderd`;
+
+  if(scrollDomain){
+    const el=document.getElementById('wid-'+scrollDomain.replace(/\s/g,'_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+}
+
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function initDomainFilter(){
+  const sel=document.getElementById('fDomain');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Alle domeinen</option>';
+  config.domains.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;if(d===cur)o.selected=true;sel.appendChild(o);});
+}
+function initFilters(){
+  initDomainFilter();
+  document.getElementById('fDomain').onchange=e=>{fDomain=e.target.value;renderAll();};
+  document.getElementById('fCat').onchange=e=>{fCat=e.target.value;renderAll();};
+  document.getElementById('fMoscow').onchange=e=>{fMoscow=e.target.value;renderAll();};
+  document.getElementById('fScope').onchange=e=>{fScope=e.target.value;renderAll();};
+  document.getElementById('fStatus').onchange=e=>{fStatus=e.target.value;renderAll();};
+  document.getElementById('fTPX').onchange=e=>{fTPX=e.target.value;renderAll();};
+  document.getElementById('fClient').onchange=e=>{fClient=e.target.value;renderAll();};
+  updateAssigneeFilters();
+  initTsItemSelect();
+  initTsPersonSelect();
+}
+
+
+function showLoading(on){
+  document.getElementById('loadingOverlay').classList.toggle('hidden',!on);
+}
+
+// Set login screen text on load
+document.getElementById('loginTitle').textContent=config.projectName;
+document.getElementById('loginSub').textContent=config.loginSub;
+document.getElementById('loginFooter').textContent='Contacteer TPX voor toegang · '+config.contactEmail;
+</script>
+
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spin"></div>
+  <div style="font-size:14px;font-weight:500">Data laden...</div>
+</div>
+
+</body>
+</html>
