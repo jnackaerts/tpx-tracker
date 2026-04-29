@@ -1252,7 +1252,7 @@ function renderBudgetItem(it){
           <label>Sign-off verantwoordelijke (klant)</label>
           <select class="wi-f-sr" style="font-size:11px;padding:3px 5px;border:1px solid #BFDBFE;border-radius:5px;background:#fff">
             <option value="">—</option>
-            ${team.client.map(m=>\`<option value="\${m}" \${p.signoffResponsible===m?'selected':''}>\${m}</option>\`).join('')}
+            ${team.client.map(m=>`<option value="${m}" ${p.signoffResponsible===m?'selected':''}>${m}</option>`).join('')}
           </select>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px">
